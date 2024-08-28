@@ -13,13 +13,14 @@ class fluid
 public:
 	int sizeX = 0;
 	int sizeY = 0;
-	vector<vector<double>> dye = {};
+	vector<vector<Color>> dye = {};
 	vector<vector<double>> flowX = {};
 	vector<vector<double>> flowY = {};
 	vector<vector<bool>> fluidField = {};
 	double cellSize = 1;
 	double timeStep = .1;
 	int renderScale = 8;
+	double decayValue = 0.99;
 
 	fluid(int _sizeX, int _sizeY);
 
@@ -27,7 +28,7 @@ public:
 
 	void update();
 
-	void gravity();
+	void decayDye();
 
 	void project();
 

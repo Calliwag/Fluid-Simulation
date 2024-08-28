@@ -6,11 +6,12 @@ fluid::fluid(int _sizeX, int _sizeY)
 {
 	sizeX = _sizeX;
 	sizeY = _sizeY;
+
 	dye.resize(_sizeX);
 	fluidField.resize(_sizeX);
 	for (int i = 0; i < _sizeX; i++)
 	{
-		dye[i].resize(_sizeY);
+		dye[i].resize(_sizeY, WHITE);
 		fluidField[i].resize(_sizeY);
 	}
 
@@ -43,14 +44,18 @@ void fluid::draw()
 	{
 		for (int y = 1; y < sizeY - 1; y++)
 		{
-			Color cellColor = BLACK;
-			cellColor.r = 255 * min(dye[x][y], 1.0);
-			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, cellColor);
-			glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
-									flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
-			DrawLine(x * renderScale, y * renderScale, (x + velocity.x * 0.5) * renderScale, (y + velocity.y * 0.5) * renderScale, WHITE);
+			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, dye[x][y]);
 		}
 	}
+	//for (int x = 1; x < sizeX - 1; x++)
+	//{
+	//	for (int y = 1; y < sizeY - 1; y++)
+	//	{
+	//		glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
+	//								flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
+	//		DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.5) * renderScale + renderScale / 2, (y + velocity.y * 0.5) * renderScale + renderScale / 2, WHITE);
+	//	}
+	//}
 	window.EndDrawing();
 }
 
@@ -60,20 +65,46 @@ void fluid::update()
 	{
 		project();
 	}
-	for (int y = 49; y <= 51; y += 1)
+	for (int y = 45; y <= 55; y += 1)
 	{
-		for (int x = 0; x < 2; x++)
+		for (int x = 1; x < 3; x++)
 		{
-			int r = GetRandomValue(0, 0);
-			flowX[x + 1][y] = 1 + r;
+			double r1 = GetRandomValue(0, 100) / 30.0;
+			flowX[x][y] = 0 + r1;
+			double r2 = GetRandomValue(0, 100) / 30.0;
+			flowX[sizeX - x][y] = -(0 + r2);
 		}
-		dye[2][y] = 0.7 + GetRandomValue(0, 30) / 100.0;
+		dye[2][y] = RED;
+		dye[sizeX - 3][y] = BLUE;
+	}
+	for (int x = 45; x <= 55; x += 1)
+	{
+		for (int y = 1; y < 3; y++)
+		{
+			double r1 = GetRandomValue(0, 100) / 30.0;
+			flowY[x][y] = 0 + r1;
+			//double r2 = GetRandomValue(0, 100) / 30.0;
+			//flowY[x][sizeY - y] = -(5 + r2);
+		}
+		dye[x][2] = GREEN;
+		//dye[x][sizeY - 3] = BLACK;
 	}
 	advect();
+	decayDye();
 }
 
-void fluid::gravity()
+void fluid::decayDye()
 {
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			dye[x][y].a = 255 - (255 - dye[x][y].a) * decayValue;
+			dye[x][y].r = 255 - (255 - dye[x][y].r) * decayValue;
+			dye[x][y].g = 255 - (255 - dye[x][y].g) * decayValue;
+			dye[x][y].b = 255 - (255 - dye[x][y].b) * decayValue;
+		}
+	}
 }
 
 void fluid::project()
@@ -95,10 +126,10 @@ void fluid::project()
 								(flowY[x][y] * fluidField[x][y - 1]);
 			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
 			double correctionFactor = 1.0 * divergence / fluidCount;
-			newFlowX[x + 1][y] -= correctionFactor;
-			newFlowX[x][y] += correctionFactor;
-			newFlowY[x][y + 1] -= correctionFactor;
-			newFlowY[x][y] += correctionFactor;
+			newFlowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
+			newFlowX[x][y] += correctionFactor * fluidField[x - 1][y];
+			newFlowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
+			newFlowY[x][y] += correctionFactor * fluidField[x][y - 1];
 		}
 	}
 
@@ -108,7 +139,7 @@ void fluid::project()
 
 void fluid::advect()
 {
-	vector<vector<double>> newDye = dye;
+	vector<vector<Color>> newDye = dye;
 	vector<vector<double>> newFlowX = flowX;
 	vector<vector<double>> newFlowY = flowY;
 	for (int x = 1; x < sizeX - 1; x++)
@@ -124,37 +155,50 @@ void fluid::advect()
 			glm::dvec2 sourceFrac = glm::dvec2{ x,y } - velocity * timeStep;
 			if (sourceFrac.x < 1)
 			{
-				//sourceFrac.x = 1;
 				double ratio = (1 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{x, y};
 			}
 			if (sourceFrac.x > sizeX - 2)
 			{
-				//sourceFrac.x = sizeX - 2;
 				double ratio = (sizeX - 2 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y < 1)
 			{
-				//sourceFrac.y = 1;
 				double ratio = (1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y > sizeY - 2)
 			{
-				//sourceFrac.y = sizeY - 2;
 				double ratio = (sizeY - 2 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			glm::ivec2 source = sourceFrac;
 			sourceFrac -= source;
-			double d1 = glm::mix(dye[source.x][source.y], dye[source.x][source.y + 1], sourceFrac.y);
-			double d2 = glm::mix(dye[source.x + 1][source.y], dye[source.x + 1][source.y + 1], sourceFrac.y);
-			double sourceDye = glm::mix(d1, d2, sourceFrac.x);
-			//if (dye[x][y] != sourceDye)
-			//{
-			//	cout << "Movement!" << endl;
-			//}
+			Color sourceDye = BLACK;
+			double d1 = 0;
+			double d2 = 0;
+
+			//Alpha blend
+			d1 = glm::mix(dye[source.x][source.y].a, dye[source.x][source.y + 1].a, sourceFrac.y);
+			d2 = glm::mix(dye[source.x + 1][source.y].a, dye[source.x + 1][source.y + 1].a, sourceFrac.y);
+			sourceDye.a = glm::mix(d1, d2, sourceFrac.x);
+
+			//Red blend
+			d1 = glm::mix(dye[source.x][source.y].r, dye[source.x][source.y + 1].r, sourceFrac.y);
+			d2 = glm::mix(dye[source.x + 1][source.y].r, dye[source.x + 1][source.y + 1].r, sourceFrac.y);
+			sourceDye.r = glm::mix(d1, d2, sourceFrac.x);
+
+			//Green blend
+			d1 = glm::mix(dye[source.x][source.y].g, dye[source.x][source.y + 1].g, sourceFrac.y);
+			d2 = glm::mix(dye[source.x + 1][source.y].g, dye[source.x + 1][source.y + 1].g, sourceFrac.y);
+			sourceDye.g = glm::mix(d1, d2, sourceFrac.x);
+
+			//Blue blend
+			d1 = glm::mix(dye[source.x][source.y].b, dye[source.x][source.y + 1].b, sourceFrac.y);
+			d2 = glm::mix(dye[source.x + 1][source.y].b, dye[source.x + 1][source.y + 1].b, sourceFrac.y);
+			sourceDye.b = glm::mix(d1, d2, sourceFrac.x);
+
 			newDye[x][y] = sourceDye;
 		}
 	}
@@ -166,25 +210,21 @@ void fluid::advect()
 			glm::dvec2 sourceFrac = glm::dvec2{ x,y } - velocity * timeStep;
 			if (sourceFrac.x < 1)
 			{
-				//sourceFrac.x = 1;
 				double ratio = (1 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.x > flowX.size() - 2)
 			{
-				//sourceFrac.x = sizeX - 2;
 				double ratio = (flowX.size() - 2 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y < 1)
 			{
-				//sourceFrac.y = 1;
 				double ratio = (1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y > flowX[x].size() - 2)
 			{
-				//sourceFrac.y = sizeY - 2;
 				double ratio = (flowX[x].size() - 2 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
@@ -198,14 +238,6 @@ void fluid::advect()
 				cout << "BAD" << endl;
 			}
 			newFlowX[x][y] = sourceFlow;
-			if (abs(newFlowX[x][y]) > 1 / timeStep)
-			{
-				newFlowX[x][y] = glm::sign(newFlowX[x][y]) * 1 / timeStep;
-			}
-			else if (abs(newFlowX[x][y]) < .001)
-			{
-				newFlowX[x][y] = 0;
-			}
 		}
 	}
 	for (int x = 1; x < flowY.size() - 1; x++)
@@ -217,25 +249,21 @@ void fluid::advect()
 
 			if (sourceFrac.x < 1)
 			{
-				//sourceFrac.x = 1;
 				double ratio = (1 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.x > flowY.size() - 2)
 			{
-				//sourceFrac.x = sizeX - 2;
 				double ratio = (flowY.size() - 2 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y < 1)
 			{
-				//sourceFrac.y = 1;
 				double ratio = (1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y > flowY[x].size() - 2)
 			{
-				//sourceFrac.y = sizeY - 2;
 				double ratio = (flowY[x].size() - 2 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
@@ -245,14 +273,6 @@ void fluid::advect()
 			double d2 = glm::mix(flowY[source.x + 1][source.y], flowY[source.x + 1][source.y + 1], sourceFrac.y);
 			double sourceFlow = glm::mix(d1, d2, sourceFrac.x);
 			newFlowY[x][y] = sourceFlow;
-			if (abs(newFlowY[x][y]) > 1 / timeStep)
-			{
-				newFlowY[x][y] = glm::sign(newFlowY[x][y]) * 1 / timeStep;
-			}
-			else if (abs(newFlowY[x][y]) < .001)
-			{
-				newFlowY[x][y] = 0;
-			}
 		}
 	}
 	dye = newDye;
