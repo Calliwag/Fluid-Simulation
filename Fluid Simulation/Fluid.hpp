@@ -18,7 +18,7 @@ public:
 	vector<vector<double>> flowY = {};
 	vector<vector<bool>> fluidField = {};
 	double cellSize = 1;
-	double timeStep = .05;
+	double timeStep = .1;
 	int renderScale = 8;
 
 	fluid(int _sizeX, int _sizeY);
