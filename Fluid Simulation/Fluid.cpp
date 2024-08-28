@@ -48,7 +48,7 @@ void fluid::draw()
 			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, cellColor);
 			glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
 									flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
-			//DrawLine(x * renderScale, y * renderScale, (x + velocity.x * 0.5) * renderScale, (y + velocity.y * 0.5) * renderScale, WHITE);
+			DrawLine(x * renderScale, y * renderScale, (x + velocity.x * 0.5) * renderScale, (y + velocity.y * 0.5) * renderScale, WHITE);
 		}
 	}
 	window.EndDrawing();
@@ -65,7 +65,7 @@ void fluid::update()
 		for (int x = 0; x < 2; x++)
 		{
 			int r = GetRandomValue(0, 3);
-			flowX[x + 1][y] = 10 + r;
+			flowX[x + 1][y] = 5 + r;
 		}
 		dye[2][y] = 0.7 + GetRandomValue(0, 30) / 100.0;
 	}
@@ -177,6 +177,10 @@ void fluid::advect()
 			double d1 = glm::mix(flowX[source.x][source.y], flowX[source.x][source.y + 1], sourceFrac.y);
 			double d2 = glm::mix(flowX[source.x + 1][source.y], flowX[source.x + 1][source.y + 1], sourceFrac.y);
 			double sourceFlow = glm::mix(d1, d2, sourceFrac.x);
+			if (sourceFlow > 100)
+			{
+				cout << "BAD" << endl;
+			}
 			newFlowX[x][y] = sourceFlow;
 		}
 	}

@@ -3,7 +3,6 @@
 int main()
 {
 	fluid newFluid(100, 100);
-	//newFluid.fluidField[10][24] = 0;
 	while (true)
 	{
 		newFluid.update();
