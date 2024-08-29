@@ -17,8 +17,8 @@ int main()
 	{
 		newFluid.update();
 		newFluid.draw();
-		string fileName = "frame" + to_string(newFluid.frames) + ".png";
-		TakeScreenshot(fileName.c_str()); //ffmpeg -framerate 144 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+		//string fileName = "frame" + to_string(newFluid.frames) + ".png";
+		//TakeScreenshot(fileName.c_str()); //ffmpeg -framerate 144 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
 	}
 }
 
