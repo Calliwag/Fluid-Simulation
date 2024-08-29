@@ -12,7 +12,7 @@ fluid::fluid(int _sizeX, int _sizeY)
 	fluidField.resize(sizeX);
 	for (int i = 0; i < sizeX; i++)
 	{
-		dye[i].resize(sizeY, WHITE);
+		dye[i].resize(sizeY, glm::dvec4{0,0,0,1});
 		fluidField[i].resize(sizeY);
 	}
 
@@ -40,12 +40,17 @@ fluid::fluid(int _sizeX, int _sizeY)
 void fluid::draw()
 {
 	window.BeginDrawing();
-	window.ClearBackground(BLACK);
+	window.ClearBackground(WHITE);
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
 		{
-			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, dye[x][y]);
+			Color cellColor = WHITE;
+			cellColor.r = dye[x][y].x * 255;
+			cellColor.g = dye[x][y].y * 255;
+			cellColor.b = dye[x][y].z * 255;
+			cellColor.a = dye[x][y].w * 255;
+			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, cellColor);
 		}
 	}
 	for (int x = 1; x < sizeX - 1; x += 4)
@@ -78,8 +83,8 @@ void fluid::update()
 			double r2 = GetRandomValue(0, 200) / 30.0;
 			flowX[sizeX - x][y] = -(0 + r2);
 		}
-		dye[2][y] = RED;
-		dye[sizeX - 3][y] = BLUE;
+		dye[2][y] = { 1,0,0,1 };
+		dye[sizeX - 3][y] = { 0,1,0,1 };
 	}
 	for (int x = sizeX / 2 - streamWidth / 2; x <= sizeX / 2 + streamWidth / 2; x += 1)
 	{
@@ -90,8 +95,8 @@ void fluid::update()
 			double r2 = GetRandomValue(0, 200) / 30.0;
 			flowY[x][sizeY - y] = -(0 + r2);
 		}
-		dye[x][2] = GREEN;
-		dye[x][sizeY - 3] = YELLOW;
+		dye[x][2] = { 0,0,1,1 };
+		dye[x][sizeY - 3] = {0,0,0,1};
 	}
 	advect();
 	decayDye();
@@ -115,27 +120,17 @@ void fluid::decayDye()
 			{
 				continue;
 			}
-			dye[x][y].a = 255 - (255 - dye[x][y].a) * decayValue;
-			dye[x][y].r = 255 - (255 - dye[x][y].r) * decayValue;
-			dye[x][y].g = 255 - (255 - dye[x][y].g) * decayValue;
-			dye[x][y].b = 255 - (255 - dye[x][y].b) * decayValue;
-			//dye[x][y].a = dye[x][y].a * decayValue;
-			//dye[x][y].r = dye[x][y].r * decayValue;
-			//dye[x][y].g = dye[x][y].g * decayValue;
-			//dye[x][y].b = dye[x][y].b * decayValue;
-			Color rDye = dye[x + 1][y];
-			Color lDye = dye[x - 1][y];
-			Color uDye = dye[x - 1][y];
-			Color dDye = dye[x + 1][y];
-			Color avgDye = BLACK;
-			avgDye.a = (rDye.a + lDye.a + uDye.a + dDye.a) / 4;
-			avgDye.r = (rDye.r + lDye.r + uDye.r + dDye.r) / 4;
-			avgDye.g = (rDye.g + lDye.g + uDye.g + dDye.g) / 4;
-			avgDye.b = (rDye.b + lDye.b + uDye.b + dDye.b) / 4;
-			dye[x][y].a = (1.0 - diffuseValue) * dye[x][y].a + avgDye.a * diffuseValue;
-			dye[x][y].r = (1.0 - diffuseValue) * dye[x][y].r + avgDye.r * diffuseValue;
-			dye[x][y].g = (1.0 - diffuseValue) * dye[x][y].g + avgDye.g * diffuseValue;
-			dye[x][y].b = (1.0 - diffuseValue) * dye[x][y].b + avgDye.b * diffuseValue;
+
+			dye[x][y] = glm::dvec4{ 0,0,0,1 } - decayValue * (glm::dvec4{ 0,0,0,1 } - dye[x][y]);
+
+			int fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+
+			glm::dvec4 rDye = (double)fluidField[x + 1][y] * dye[x + 1][y];
+			glm::dvec4 lDye = (double)fluidField[x - 1][y] * dye[x - 1][y];
+			glm::dvec4 uDye = (double)fluidField[x][y - 1] * dye[x][y - 1];
+			glm::dvec4 dDye = (double)fluidField[x][y + 1] * dye[x][y + 1];
+			glm::dvec4 avgDye = (1.0 / fluidCount) * (rDye + lDye + uDye + dDye);
+			dye[x][y] = (1.0 - diffuseValue) * dye[x][y] + avgDye * diffuseValue;
 		}
 	}
 }
@@ -172,7 +167,7 @@ void fluid::project()
 
 void fluid::advect()
 {
-	vector<vector<Color>> newDye = dye;
+	vector<vector<glm::dvec4>> newDye = dye;
 	vector<vector<double>> newFlowX = flowX;
 	vector<vector<double>> newFlowY = flowY;
 	for (int x = 1; x < sizeX - 1; x++)
@@ -211,29 +206,14 @@ void fluid::advect()
 			}
 			glm::ivec2 source = glm::ivec2{ floor(sourceFrac.x),floor(sourceFrac.y) };
 			sourceFrac -= source;
-			Color sourceDye = WHITE;
-			double d1 = 0;
-			double d2 = 0;
+			glm::dvec4 sourceDye{ 1,1,1,1 };
+			glm::dvec4 d1 = { 1,1,1,1 };
+			glm::dvec4 d2 = { 1,1,1,1 };
 
 			//Alpha blend
-			d1 = glm::mix(dye[source.x][source.y].a, dye[source.x][source.y + 1].a, sourceFrac.y);
-			d2 = glm::mix(dye[source.x + 1][source.y].a, dye[source.x + 1][source.y + 1].a, sourceFrac.y);
-			sourceDye.a = glm::mix(d1, d2, sourceFrac.x);
-
-			//Red blend
-			d1 = glm::mix(dye[source.x][source.y].r, dye[source.x][source.y + 1].r, sourceFrac.y);
-			d2 = glm::mix(dye[source.x + 1][source.y].r, dye[source.x + 1][source.y + 1].r, sourceFrac.y);
-			sourceDye.r = glm::mix(d1, d2, sourceFrac.x);
-
-			//Green blend
-			d1 = glm::mix(dye[source.x][source.y].g, dye[source.x][source.y + 1].g, sourceFrac.y);
-			d2 = glm::mix(dye[source.x + 1][source.y].g, dye[source.x + 1][source.y + 1].g, sourceFrac.y);
-			sourceDye.g = glm::mix(d1, d2, sourceFrac.x);
-
-			//Blue blend
-			d1 = glm::mix(dye[source.x][source.y].b, dye[source.x][source.y + 1].b, sourceFrac.y);
-			d2 = glm::mix(dye[source.x + 1][source.y].b, dye[source.x + 1][source.y + 1].b, sourceFrac.y);
-			sourceDye.b = glm::mix(d1, d2, sourceFrac.x);
+			d1 = glm::mix(dye[source.x][source.y], dye[source.x][source.y + 1], sourceFrac.y);
+			d2 = glm::mix(dye[source.x + 1][source.y], dye[source.x + 1][source.y + 1], sourceFrac.y);
+			sourceDye = glm::mix(d1, d2, sourceFrac.x);
 
 			newDye[x][y] = sourceDye;
 		}
