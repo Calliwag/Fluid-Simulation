@@ -4,8 +4,6 @@
 #include "glm/glm.hpp"
 #include "raylib-cpp.hpp"
 
-using namespace std;
-
 extern raylib::Window window;
 
 class fluid
@@ -14,15 +12,16 @@ public:
 	int sizeX = 0;
 	int sizeY = 0;
 	int frames = 0;
-	vector<vector<Color>> dye = {};
-	vector<vector<double>> flowX = {};
-	vector<vector<double>> flowY = {};
-	vector<vector<bool>> fluidField = {};
+	std::vector<std::vector<Color>> dye = {};
+	std::vector<std::vector<double>> flowX = {};
+	std::vector<std::vector<double>> flowY = {};
+	std::vector<std::vector<bool>> fluidField = {};
 	double cellSize = 1;
 	double timeStep = .1;
-	int renderScale = 8;
+	int renderScale = 16;
 	double decayValue = 0.99;
-	double vorticity = 0.05;
+	double diffuseValue = 0.1;
+	double vorticity = 0.1;
 
 	fluid(int _sizeX, int _sizeY);
 

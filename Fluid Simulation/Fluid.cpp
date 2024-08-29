@@ -1,18 +1,19 @@
 #include "Fluid.hpp"
 raylib::Window window(100, 100, "Fluid Simulation");
 
+using namespace std;
 
 fluid::fluid(int _sizeX, int _sizeY)
 {
 	sizeX = _sizeX;
 	sizeY = _sizeY;
 
-	dye.resize(_sizeX);
-	fluidField.resize(_sizeX);
-	for (int i = 0; i < _sizeX; i++)
+	dye.resize(sizeX);
+	fluidField.resize(sizeX);
+	for (int i = 0; i < sizeX; i++)
 	{
-		dye[i].resize(_sizeY, WHITE);
-		fluidField[i].resize(_sizeY);
+		dye[i].resize(sizeY, WHITE);
+		fluidField[i].resize(sizeY);
 	}
 
 	for (int x = 1; x < sizeX - 1; x++)
@@ -23,15 +24,15 @@ fluid::fluid(int _sizeX, int _sizeY)
 		}
 	}
 
-	flowX.resize(_sizeX + 1);
-	for (int i = 0; i < _sizeX + 1; i++)
+	flowX.resize(sizeX + 1);
+	for (int i = 0; i < sizeX + 1; i++)
 	{
-		flowX[i].resize(_sizeY);
+		flowX[i].resize(sizeY);
 	}
-	flowY.resize(_sizeX);
-	for (int i = 0; i < _sizeX; i++)
+	flowY.resize(sizeX);
+	for (int i = 0; i < sizeX; i++)
 	{
-		flowY[i].resize(_sizeY + 1);
+		flowY[i].resize(sizeY + 1);
 	}
 	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
 }
@@ -47,42 +48,28 @@ void fluid::draw()
 			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, dye[x][y]);
 		}
 	}
-	//for (int x = 1; x < sizeX - 1; x += 1)
-	//{
-	//	for (int y = 1; y < sizeY - 1; y += 1)
-	//	{
-	//		glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
-	//								flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
-	//		DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.5) * renderScale + renderScale / 2, (y + velocity.y * 0.5) * renderScale + renderScale / 2, BLACK);
-	//	}
-	//}
+	for (int x = 1; x < sizeX - 1; x += 4)
+	{
+		for (int y = 1; y < sizeY - 1; y += 4)
+		{
+			glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
+									flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
+			DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.5) * renderScale + renderScale / 2, (y + velocity.y * 0.5) * renderScale + renderScale / 2, WHITE);
+		}
+	}
 	window.EndDrawing();
 }
 
 void fluid::update()
 {
 	frames++;
-	int streamWidth = 4;
+	int streamWidth = 16;
 	for (int i = 0; i < 5; i++)
 	{
 		project();
 	}
 
-	//for (int y = 0; y < sizeY; y += 1)
-	//{
-	//	for (int x = 1; x < 3; x++)
-	//	{
-	//		flowX[x][y] = 10 + GetRandomValue(0, 2);
-	//		flowX[sizeX - x - 1][y] = 10 + GetRandomValue(0, 2);
-	//	}
-	//}
-	//for (int y = sizeY / 2 - streamWidth / 2; y < sizeY / 2 + streamWidth / 2; y++)
-	//{
-	//	dye[2][y] = RED;
-	//	dye[3][y] = RED;
-	//}
-
-	for (int y = 50 - streamWidth / 2; y <= 50 + streamWidth / 2; y += 1)
+	for (int y = sizeY / 2 - streamWidth / 2; y <= sizeY / 2 + streamWidth / 2; y += 1)
 	{
 		for (int x = 1; x < 3; x++)
 		{
@@ -94,7 +81,7 @@ void fluid::update()
 		dye[2][y] = RED;
 		dye[sizeX - 3][y] = BLUE;
 	}
-	for (int x = 50 - streamWidth / 2; x <= 50 + streamWidth / 2; x += 1)
+	for (int x = sizeX / 2 - streamWidth / 2; x <= sizeX / 2 + streamWidth / 2; x += 1)
 	{
 		for (int y = 1; y < 3; y++)
 		{
@@ -120,14 +107,35 @@ glm::dvec2 fluid::getGridVelocity(int x, int y)
 
 void fluid::decayDye()
 {
-	for (int x = 0; x < sizeX; x++)
+	for (int x = 1; x < sizeX - 1; x++)
 	{
-		for (int y = 0; y < sizeY; y++)
+		for (int y = 1; y < sizeY - 1; y++)
 		{
+			if (fluidField[x][y] == 0)
+			{
+				continue;
+			}
 			dye[x][y].a = 255 - (255 - dye[x][y].a) * decayValue;
 			dye[x][y].r = 255 - (255 - dye[x][y].r) * decayValue;
 			dye[x][y].g = 255 - (255 - dye[x][y].g) * decayValue;
 			dye[x][y].b = 255 - (255 - dye[x][y].b) * decayValue;
+			//dye[x][y].a = dye[x][y].a * decayValue;
+			//dye[x][y].r = dye[x][y].r * decayValue;
+			//dye[x][y].g = dye[x][y].g * decayValue;
+			//dye[x][y].b = dye[x][y].b * decayValue;
+			Color rDye = dye[x + 1][y];
+			Color lDye = dye[x - 1][y];
+			Color uDye = dye[x - 1][y];
+			Color dDye = dye[x + 1][y];
+			Color avgDye = BLACK;
+			avgDye.a = (rDye.a + lDye.a + uDye.a + dDye.a) / 4;
+			avgDye.r = (rDye.r + lDye.r + uDye.r + dDye.r) / 4;
+			avgDye.g = (rDye.g + lDye.g + uDye.g + dDye.g) / 4;
+			avgDye.b = (rDye.b + lDye.b + uDye.b + dDye.b) / 4;
+			dye[x][y].a = (1.0 - diffuseValue) * dye[x][y].a + avgDye.a * diffuseValue;
+			dye[x][y].r = (1.0 - diffuseValue) * dye[x][y].r + avgDye.r * diffuseValue;
+			dye[x][y].g = (1.0 - diffuseValue) * dye[x][y].g + avgDye.g * diffuseValue;
+			dye[x][y].b = (1.0 - diffuseValue) * dye[x][y].b + avgDye.b * diffuseValue;
 		}
 	}
 }
@@ -176,6 +184,10 @@ void fluid::advect()
 				continue;
 			}
 			glm::dvec2 velocity = getGridVelocity(x, y);
+			if (length(velocity) * timeStep < 0.01)
+			{
+				continue;
+			}
 			glm::dvec2 sourceFrac = glm::dvec2{ x,y } - velocity * timeStep;
 			if (sourceFrac.x < 1)
 			{
@@ -197,9 +209,9 @@ void fluid::advect()
 				double ratio = (sizeY - 2 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
-			glm::ivec2 source = sourceFrac;
+			glm::ivec2 source = glm::ivec2{ floor(sourceFrac.x),floor(sourceFrac.y) };
 			sourceFrac -= source;
-			Color sourceDye = BLACK;
+			Color sourceDye = WHITE;
 			double d1 = 0;
 			double d2 = 0;
 

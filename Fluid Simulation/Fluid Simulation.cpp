@@ -7,7 +7,7 @@ int main()
 	//{
 	//	for (int y = 0; y < newFluid.sizeY; y++)
 	//	{
-	//		if (sqrt(pow((x - newFluid.sizeX / 2 + 150),2) + pow((y - newFluid.sizeY / 2),2)) < 20)
+	//		if (sqrt(pow((x - newFluid.sizeX / 2 + 150),2) + pow((y - newFluid.sizeY / 2),2)) < 25)
 	//		{
 	//			newFluid.fluidField[x][y] = 0;
 	//		}
