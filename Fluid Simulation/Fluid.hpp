@@ -13,6 +13,7 @@ class fluid
 public:
 	int sizeX = 0;
 	int sizeY = 0;
+	int frames = 0;
 	vector<vector<Color>> dye = {};
 	vector<vector<double>> flowX = {};
 	vector<vector<double>> flowY = {};
@@ -21,6 +22,7 @@ public:
 	double timeStep = .1;
 	int renderScale = 8;
 	double decayValue = 0.99;
+	double vorticity = 0.05;
 
 	fluid(int _sizeX, int _sizeY);
 
@@ -28,9 +30,15 @@ public:
 
 	void update();
 
+	glm::dvec2 getGridVelocity(int x, int y);
+
 	void decayDye();
 
 	void project();
 
 	void advect();
+
+	double curl(int x, int y);
+
+	void vorticityConfinement();
 };
