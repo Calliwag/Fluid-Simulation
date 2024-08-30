@@ -2,34 +2,49 @@
 
 int main()
 {
-	fluid newFluid(200, 100);
-	for (int x = 0; x < newFluid.sizeX; x++)
-	{
-		for (int y = 0; y < newFluid.sizeY; y++)
-		{
-			if (sqrt(pow((x - newFluid.sizeX / 2 + 50),2) + pow((y - newFluid.sizeY / 2),2)) < 9)
-			{
-				newFluid.fluidField[x][y] = 0;
-			}
-		}
-	}
-
-	for (int y = 0; y < newFluid.sizeY; y += 1)
-	{
-		for (int x = 1; x < 3; x++)
-		{
-			newFluid.sourceX[x][y] = 7;
-			newFluid.sourceX[newFluid.sizeX - x][y] = 7;
-		}
-	}
+	fluid newFluid(200, 200);
 
 	int streamWidth = 8;
 
-	for (int y = newFluid.sizeY / 2 - streamWidth / 2; y <= newFluid.sizeY / 2 + streamWidth / 2; y++)
+	for (int y = newFluid.sizeY / 2 - streamWidth / 2; y <= newFluid.sizeY / 2 + streamWidth / 2; y += 1)
 	{
+		for (int x = 1; x < 3; x++)
+		{
+			newFluid.sourceX[x][y] = 6;
+			newFluid.sourceX[newFluid.sizeX - x][y] = -6;
+		}
 		newFluid.dyeSource[2][y] = { 1,0,0,1 };
-		newFluid.dyeSource[3][y] = { 1,0,0,1 };
+		newFluid.dyeSource[newFluid.sizeX - 3][y] = { 0,1,0,1 };
 	}
+	for (int x = newFluid.sizeX / 2 - streamWidth / 2; x <= newFluid.sizeX / 2 + streamWidth / 2; x += 1)
+	{
+		for (int y = 1; y < 3; y++)
+		{
+			newFluid.sourceY[x][y] = 6;
+			newFluid.sourceY[x][newFluid.sizeY - y] = -6;
+		}
+		newFluid.dyeSource[x][2] = { 0,0,1,1 };
+		newFluid.dyeSource[x][newFluid.sizeY - 3] = { 1,1,0,1 };
+	}
+
+	//for (int x = 0; x < newFluid.sizeX; x++)
+	//{
+	//	for (int y = 0; y < newFluid.sizeY; y++)
+	//	{
+	//		if (sqrt(pow((x - newFluid.sizeX / 2 + 50),2) + pow((y - newFluid.sizeY / 2),2)) < 9)
+	//		{
+	//			newFluid.fluidField[x][y] = 0;
+	//		}
+	//	}
+	//}
+	//for (int y = 0; y < newFluid.sizeY; y += 1)
+	//{
+	//	for (int x = 1; x < 3; x++)
+	//	{
+	//		newFluid.sourceX[x][y] = 7;
+	//		newFluid.sourceX[newFluid.sizeX - x][y] = 7;
+	//	}
+	//}
 
 	while (true)
 	{

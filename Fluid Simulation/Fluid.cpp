@@ -79,32 +79,6 @@ void fluid::update()
 	{
 		project();
 	}
-
-	//for (int y = sizeY / 2 - streamWidth / 2; y <= sizeY / 2 + streamWidth / 2; y += 1)
-	//{
-	//	for (int x = 1; x < 3; x++)
-	//	{
-	//		double r1 = GetRandomValue(0, 10) / 10.0;
-	//		flowX[x][y] = 6 + r1;
-	//		double r2 = GetRandomValue(0, 10) / 10.0;
-	//		flowX[sizeX - x][y] = -(6 + r2);
-	//	}
-	//	dye[2][y] = { 1,0,0,1 };
-	//	dye[sizeX - 3][y] = { 0,1,0,1 };
-	//}
-	//for (int x = sizeX / 2 - streamWidth / 2; x <= sizeX / 2 + streamWidth / 2; x += 1)
-	//{
-	//	for (int y = 1; y < 3; y++)
-	//	{
-	//		double r1 = GetRandomValue(0, 10) / 10.0;
-	//		flowY[x][y] = 6 + r1;
-	//		double r2 = GetRandomValue(0, 10) / 10.0;
-	//		flowY[x][sizeY - y] = -(6 + r2);
-	//	}
-	//	dye[x][2] = { 0,0,1,1 };
-	//	dye[x][sizeY - 3] = { 1,1,0,1 };
-	//}
-
 	updateDyeSources();
 	advect();
 	decayDye();

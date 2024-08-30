@@ -22,8 +22,8 @@ public:
 	std::vector<std::vector<bool>> fluidField = {};
 	double cellSize = 1;
 	double timeStep = 1.0 / 10;
-	int renderScale = 8;
-	double decayValue = 1;
+	int renderScale = 4;
+	double decayValue = .999;
 	double diffuseValue = 0.0;
 	double vorticity = 0.0;
 	int relaxationSteps = 20;
