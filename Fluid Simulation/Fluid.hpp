@@ -13,15 +13,16 @@ public:
 	int sizeY = 0;
 	int frames = 0;
 	std::vector<std::vector<glm::dvec4>> dye = {};
+	glm::dvec4 baseDye = { 0,0,0,1 };
 	std::vector<std::vector<double>> flowX = {};
 	std::vector<std::vector<double>> flowY = {};
 	std::vector<std::vector<bool>> fluidField = {};
 	double cellSize = 1;
-	double timeStep = .1;
-	int renderScale = 8;
-	double decayValue = 0.995;
-	double diffuseValue = 0.01;
-	double vorticity = 0.1;
+	double timeStep = 1.0 / 10;
+	int renderScale = 4;
+	double decayValue = 0.999;
+	double diffuseValue = 0.0;
+	double vorticity = 0.0;
 
 	fluid(int _sizeX, int _sizeY);
 

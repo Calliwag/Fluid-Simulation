@@ -2,23 +2,23 @@
 
 int main()
 {
-	fluid newFluid(100, 100);
-	//for (int x = 0; x < newFluid.sizeX; x++)
-	//{
-	//	for (int y = 0; y < newFluid.sizeY; y++)
-	//	{
-	//		if (sqrt(pow((x - newFluid.sizeX / 2 + 150),2) + pow((y - newFluid.sizeY / 2),2)) < 25)
-	//		{
-	//			newFluid.fluidField[x][y] = 0;
-	//		}
-	//	}
-	//}
+	fluid newFluid(200, 100);
+	for (int x = 0; x < newFluid.sizeX; x++)
+	{
+		for (int y = 0; y < newFluid.sizeY; y++)
+		{
+			if (sqrt(pow((x - newFluid.sizeX / 2 + 50),2) + pow((y - newFluid.sizeY / 2),2)) < 9)
+			{
+				newFluid.fluidField[x][y] = 0;
+			}
+		}
+	}
 	while (true)
 	{
 		newFluid.update();
 		newFluid.draw();
-		//string fileName = "frame" + to_string(newFluid.frames) + ".png";
-		//TakeScreenshot(fileName.c_str()); //ffmpeg -framerate 144 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+		std::string fileName = "frame" + std::to_string(newFluid.frames) + ".png";
+		TakeScreenshot(fileName.c_str()); //ffmpeg -framerate 144 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
 	}
 }
 

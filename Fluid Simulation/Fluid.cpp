@@ -12,7 +12,7 @@ fluid::fluid(int _sizeX, int _sizeY)
 	fluidField.resize(sizeX);
 	for (int i = 0; i < sizeX; i++)
 	{
-		dye[i].resize(sizeY, glm::dvec4{0,0,0,1});
+		dye[i].resize(sizeY, baseDye);
 		fluidField[i].resize(sizeY);
 	}
 
@@ -53,51 +53,79 @@ void fluid::draw()
 			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, cellColor);
 		}
 	}
-	for (int x = 1; x < sizeX - 1; x += 4)
-	{
-		for (int y = 1; y < sizeY - 1; y += 4)
-		{
-			glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
-									flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
-			DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.5) * renderScale + renderScale / 2, (y + velocity.y * 0.5) * renderScale + renderScale / 2, WHITE);
-		}
-	}
+	//for (int x = 1; x < sizeX - 1; x += 4)
+	//{
+	//	for (int y = 1; y < sizeY - 1; y += 4)
+	//	{
+	//		glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
+	//								flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
+	//		DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.25) * renderScale + renderScale / 2, (y + velocity.y * 0.25) * renderScale + renderScale / 2, WHITE);
+	//	}
+	//}
 	window.EndDrawing();
 }
 
 void fluid::update()
 {
 	frames++;
-	int streamWidth = 16;
-	for (int i = 0; i < 5; i++)
+	cout << frames << endl;
+	int streamWidth = 8;
+	for (int i = 0; i < 100; i++)
 	{
+		for (int y = 0; y < sizeY; y += 1)
+		{
+			for (int x = 1; x < 3; x++)
+			{
+				double r1 = GetRandomValue(0, 0) / 10.0;
+				flowX[x][y] = 15 + r1;
+				flowX[sizeX - x][y] = 15 + r1;
+			}
+		}
 		project();
 	}
 
-	for (int y = sizeY / 2 - streamWidth / 2; y <= sizeY / 2 + streamWidth / 2; y += 1)
+	//for (int y = sizeY / 2 - streamWidth / 2; y <= sizeY / 2 + streamWidth / 2; y += 1)
+	//{
+	//	for (int x = 1; x < 3; x++)
+	//	{
+	//		double r1 = GetRandomValue(0, 10) / 10.0;
+	//		flowX[x][y] = 6 + r1;
+	//		double r2 = GetRandomValue(0, 10) / 10.0;
+	//		flowX[sizeX - x][y] = -(6 + r2);
+	//	}
+	//	dye[2][y] = { 1,0,0,1 };
+	//	dye[sizeX - 3][y] = { 0,1,0,1 };
+	//}
+	//for (int x = sizeX / 2 - streamWidth / 2; x <= sizeX / 2 + streamWidth / 2; x += 1)
+	//{
+	//	for (int y = 1; y < 3; y++)
+	//	{
+	//		double r1 = GetRandomValue(0, 10) / 10.0;
+	//		flowY[x][y] = 6 + r1;
+	//		double r2 = GetRandomValue(0, 10) / 10.0;
+	//		flowY[x][sizeY - y] = -(6 + r2);
+	//	}
+	//	dye[x][2] = { 0,0,1,1 };
+	//	dye[x][sizeY - 3] = { 1,1,0,1 };
+	//}
+
+	for (int y = 0; y < sizeY; y += 1)
 	{
 		for (int x = 1; x < 3; x++)
 		{
-			double r1 = GetRandomValue(0, 200) / 30.0;
-			flowX[x][y] = 0 + r1;
-			double r2 = GetRandomValue(0, 200) / 30.0;
-			flowX[sizeX - x][y] = -(0 + r2);
+			double r1 = GetRandomValue(0, 0) / 10.0;
+			flowX[x][y] = 15 + r1;
+			flowY[x][y] = 0;
+			flowY[x][y + 1] = 0;
+			flowX[sizeX - x][y] = 15 + r1;
 		}
-		dye[2][y] = { 1,0,0,1 };
-		dye[sizeX - 3][y] = { 0,1,0,1 };
 	}
-	for (int x = sizeX / 2 - streamWidth / 2; x <= sizeX / 2 + streamWidth / 2; x += 1)
+
+	for (int y = sizeY / 2 - streamWidth / 2; y <= sizeY / 2 + streamWidth / 2; y++)
 	{
-		for (int y = 1; y < 3; y++)
-		{
-			double r1 = GetRandomValue(0, 200) / 30.0;
-			flowY[x][y] = 0 + r1;
-			double r2 = GetRandomValue(0, 200) / 30.0;
-			flowY[x][sizeY - y] = -(0 + r2);
-		}
-		dye[x][2] = { 0,0,1,1 };
-		dye[x][sizeY - 3] = {0,0,0,1};
+		dye[2][y] = { 1,0,0,1 };
 	}
+
 	advect();
 	decayDye();
 	vorticityConfinement();
@@ -121,7 +149,7 @@ void fluid::decayDye()
 				continue;
 			}
 
-			dye[x][y] = glm::dvec4{ 0,0,0,1 } - decayValue * (glm::dvec4{ 0,0,0,1 } - dye[x][y]);
+			dye[x][y] = baseDye - decayValue * (baseDye - dye[x][y]);
 
 			int fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
 
@@ -137,12 +165,9 @@ void fluid::decayDye()
 
 void fluid::project()
 {
-	vector<vector<double>> newFlowX = flowX;
-	vector<vector<double>> newFlowY = flowY;
-
-	for (int x = 0; x < sizeX; x++)
+	for (int x = 1; x < sizeX - 1; x++)
 	{
-		for (int y = 0; y < sizeY; y++)
+		for (int y = 1; y < sizeY - 1; y++)
 		{
 			if (fluidField[x][y] == 0)
 			{
@@ -153,16 +178,33 @@ void fluid::project()
 								(flowY[x][y + 1] * fluidField[x][y + 1]) - 
 								(flowY[x][y] * fluidField[x][y - 1]);
 			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-			double correctionFactor = 1.0 * divergence / fluidCount;
-			newFlowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
-			newFlowX[x][y] += correctionFactor * fluidField[x - 1][y];
-			newFlowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
-			newFlowY[x][y] += correctionFactor * fluidField[x][y - 1];
+			double correctionFactor = 1.1 * divergence / fluidCount;
+			flowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
+			flowX[x][y] += correctionFactor * fluidField[x - 1][y];
+			flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
+			flowY[x][y] += correctionFactor * fluidField[x][y - 1];
 		}
 	}
-
-	flowX = newFlowX;
-	flowY = newFlowY;
+	for (int x = sizeX - 2; x > 0; x--)
+	{
+		for (int y = sizeY - 2; y > 0; y--)
+		{
+			if (fluidField[x][y] == 0)
+			{
+				continue;
+			}
+			double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
+				(flowX[x][y] * fluidField[x - 1][y]) +
+				(flowY[x][y + 1] * fluidField[x][y + 1]) -
+				(flowY[x][y] * fluidField[x][y - 1]);
+			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+			double correctionFactor = 1.1 * divergence / fluidCount;
+			flowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
+			flowX[x][y] += correctionFactor * fluidField[x - 1][y];
+			flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
+			flowY[x][y] += correctionFactor * fluidField[x][y - 1];
+		}
+	}
 }
 
 void fluid::advect()
@@ -210,7 +252,6 @@ void fluid::advect()
 			glm::dvec4 d1 = { 1,1,1,1 };
 			glm::dvec4 d2 = { 1,1,1,1 };
 
-			//Alpha blend
 			d1 = glm::mix(dye[source.x][source.y], dye[source.x][source.y + 1], sourceFrac.y);
 			d2 = glm::mix(dye[source.x + 1][source.y], dye[source.x + 1][source.y + 1], sourceFrac.y);
 			sourceDye = glm::mix(d1, d2, sourceFrac.x);
