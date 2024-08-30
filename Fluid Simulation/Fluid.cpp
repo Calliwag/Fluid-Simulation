@@ -9,10 +9,12 @@ fluid::fluid(int _sizeX, int _sizeY)
 	sizeY = _sizeY;
 
 	dye.resize(sizeX);
+	dyeSource.resize(sizeX);
 	fluidField.resize(sizeX);
 	for (int i = 0; i < sizeX; i++)
 	{
 		dye[i].resize(sizeY, baseDye);
+		dyeSource[i].resize(sizeY, baseDye);
 		fluidField[i].resize(sizeY);
 	}
 
@@ -25,14 +27,18 @@ fluid::fluid(int _sizeX, int _sizeY)
 	}
 
 	flowX.resize(sizeX + 1);
+	sourceX.resize(sizeX + 1);
 	for (int i = 0; i < sizeX + 1; i++)
 	{
 		flowX[i].resize(sizeY);
+		sourceX[i].resize(sizeY);
 	}
 	flowY.resize(sizeX);
+	sourceY.resize(sizeX);
 	for (int i = 0; i < sizeX; i++)
 	{
 		flowY[i].resize(sizeY + 1);
+		sourceY[i].resize(sizeY + 1);
 	}
 	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
 }
@@ -53,15 +59,15 @@ void fluid::draw()
 			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, cellColor);
 		}
 	}
-	//for (int x = 1; x < sizeX - 1; x += 4)
-	//{
-	//	for (int y = 1; y < sizeY - 1; y += 4)
-	//	{
-	//		glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
-	//								flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
-	//		DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.25) * renderScale + renderScale / 2, (y + velocity.y * 0.25) * renderScale + renderScale / 2, WHITE);
-	//	}
-	//}
+	for (int x = 1; x < sizeX - 1; x += 4)
+	{
+		for (int y = 1; y < sizeY - 1; y += 4)
+		{
+			glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
+									flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
+			DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.5) * renderScale + renderScale / 2, (y + velocity.y * 0.5) * renderScale + renderScale / 2, WHITE);
+		}
+	}
 	window.EndDrawing();
 }
 
@@ -69,18 +75,8 @@ void fluid::update()
 {
 	frames++;
 	cout << frames << endl;
-	int streamWidth = 8;
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < relaxationSteps; i++)
 	{
-		for (int y = 0; y < sizeY; y += 1)
-		{
-			for (int x = 1; x < 3; x++)
-			{
-				double r1 = GetRandomValue(0, 0) / 10.0;
-				flowX[x][y] = 15 + r1;
-				flowX[sizeX - x][y] = 15 + r1;
-			}
-		}
 		project();
 	}
 
@@ -109,26 +105,48 @@ void fluid::update()
 	//	dye[x][sizeY - 3] = { 1,1,0,1 };
 	//}
 
-	for (int y = 0; y < sizeY; y += 1)
-	{
-		for (int x = 1; x < 3; x++)
-		{
-			double r1 = GetRandomValue(0, 0) / 10.0;
-			flowX[x][y] = 15 + r1;
-			flowY[x][y] = 0;
-			flowY[x][y + 1] = 0;
-			flowX[sizeX - x][y] = 15 + r1;
-		}
-	}
-
-	for (int y = sizeY / 2 - streamWidth / 2; y <= sizeY / 2 + streamWidth / 2; y++)
-	{
-		dye[2][y] = { 1,0,0,1 };
-	}
-
+	updateDyeSources();
 	advect();
 	decayDye();
 	vorticityConfinement();
+}
+
+void fluid::updateSources()
+{
+	for (int x = 0; x < sizeX + 1; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			if (sourceX[x][y] != 0)
+			{
+				flowX[x][y] = sourceX[x][y];
+			}
+		}
+	}
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY + 1; y++)
+		{
+			if (sourceY[x][y] != 0)
+			{
+				flowY[x][y] = sourceY[x][y];
+			}
+		}
+	}
+}
+
+void fluid::updateDyeSources()
+{
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			if (dyeSource[x][y] != baseDye)
+			{
+				dye[x][y] = dyeSource[x][y];
+			}
+		}
+	}
 }
 
 glm::dvec2 fluid::getGridVelocity(int x, int y)
@@ -165,9 +183,10 @@ void fluid::decayDye()
 
 void fluid::project()
 {
-	for (int x = 1; x < sizeX - 1; x++)
+	updateSources();
+	for (int x = 0; x < sizeX; x++)
 	{
-		for (int y = 1; y < sizeY - 1; y++)
+		for (int y = x % 2; y < sizeY; y += 2)
 		{
 			if (fluidField[x][y] == 0)
 			{
@@ -178,16 +197,17 @@ void fluid::project()
 								(flowY[x][y + 1] * fluidField[x][y + 1]) - 
 								(flowY[x][y] * fluidField[x][y - 1]);
 			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-			double correctionFactor = 1.1 * divergence / fluidCount;
+			double correctionFactor = 1.8 * divergence / fluidCount;
 			flowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
 			flowX[x][y] += correctionFactor * fluidField[x - 1][y];
 			flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
 			flowY[x][y] += correctionFactor * fluidField[x][y - 1];
 		}
 	}
-	for (int x = sizeX - 2; x > 0; x--)
+	//updateSources();
+	for (int x = 0; x < sizeX; x++)
 	{
-		for (int y = sizeY - 2; y > 0; y--)
+		for (int y = 1 - (x % 2); y < sizeY; y += 2)
 		{
 			if (fluidField[x][y] == 0)
 			{
@@ -198,7 +218,7 @@ void fluid::project()
 				(flowY[x][y + 1] * fluidField[x][y + 1]) -
 				(flowY[x][y] * fluidField[x][y - 1]);
 			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-			double correctionFactor = 1.1 * divergence / fluidCount;
+			double correctionFactor = 1.8 * divergence / fluidCount;
 			flowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
 			flowX[x][y] += correctionFactor * fluidField[x - 1][y];
 			flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];

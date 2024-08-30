@@ -13,12 +13,33 @@ int main()
 			}
 		}
 	}
+
+	for (int y = 0; y < newFluid.sizeY; y += 1)
+	{
+		for (int x = 1; x < 3; x++)
+		{
+			newFluid.sourceX[x][y] = 7;
+			newFluid.sourceX[newFluid.sizeX - x][y] = 7;
+		}
+	}
+
+	int streamWidth = 8;
+
+	for (int y = newFluid.sizeY / 2 - streamWidth / 2; y <= newFluid.sizeY / 2 + streamWidth / 2; y++)
+	{
+		newFluid.dyeSource[2][y] = { 1,0,0,1 };
+		newFluid.dyeSource[3][y] = { 1,0,0,1 };
+	}
+
 	while (true)
 	{
 		newFluid.update();
 		newFluid.draw();
-		std::string fileName = "frame" + std::to_string(newFluid.frames) + ".png";
-		TakeScreenshot(fileName.c_str()); //ffmpeg -framerate 144 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+		//if (newFluid.frames <= 4320)
+		//{
+		//	std::string fileName = "frame" + std::to_string(newFluid.frames) + ".png";
+		//	TakeScreenshot(fileName.c_str()); //ffmpeg -framerate 144 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+		//}
 	}
 }
 
