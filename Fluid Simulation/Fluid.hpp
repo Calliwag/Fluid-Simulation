@@ -40,12 +40,15 @@ public:
 
 	// Rendering
 	int renderScale = 6;
-	int drawType = 0; // 0 = dye, 1 = pressure, 2 = curl
+	int drawMode = 0; // 0 = dye, 1 = pressure, 2 = curl
 	glm::dvec2 pressureMinMax = { -0,0 };
 	glm::dvec2 curlMinMax = { -0,0 };
 	bool drawLines = 1;
 	int lineSize = 4;
 	int maxDrawFrames = 0;
+	RenderTexture2D fluidRenderTexture;
+	RenderTexture2D linesRenderTexture;
+	RenderTexture2D screenRenderTexture;
 
 	// Constructor
 	fluid(int _sizeX, int _sizeY);
@@ -57,21 +60,21 @@ public:
 	// Simulation
 	void update();
 
-	void updateSources();
+	void updateFlowSources();
 
 	void updateDyeSources();
 
 	void updateFlowGrid();
 
-	glm::dvec2 getGridVelocity(int x, int y);
-
 	void decayDye();
 
-	void project();
+	void diffuseDye();
 
-	void advect();
+	void solveIncompressibility();
 
-	double curl(int x, int y);
+	void advectVelocity();
+
+	void advectDye();
 
 	void updateCurlGrid();
 

@@ -47,6 +47,10 @@ fluid::fluid(int _sizeX, int _sizeY)
 		sourceY[i].resize(sizeY + 1);
 	}
 	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
+
+	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
+	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
+	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 }
 
 fluid::fluid(Image layoutImage, glm::dvec4 dyeColor)
@@ -130,51 +134,56 @@ fluid::fluid(Image layoutImage, glm::dvec4 dyeColor)
 			}
 		}
 	}
+
+	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
+	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
+	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 }
 
 void fluid::draw()
 {
-	window.BeginDrawing();
-	window.ClearBackground(BLACK);
+	BeginTextureMode(fluidRenderTexture);
+	ClearBackground(BLACK);
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
 		{
-			Color cellColor;
+			Color cellColor = YELLOW;
 			if(fluidField[x][y] == 0)
 			{
 				cellColor.r = barrierColor.x * 255;
 				cellColor.g = barrierColor.y * 255;
 				cellColor.b = barrierColor.z * 255;
 				cellColor.a = barrierColor.w * 255;
-				DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, cellColor);
-				continue;
 			}
-			if (drawType == 0)
+			else if (drawMode == 0)
 			{
 				cellColor.r = dye[x][y].x * 255;
 				cellColor.g = dye[x][y].y * 255;
 				cellColor.b = dye[x][y].z * 255;
 				cellColor.a = dye[x][y].w * 255;
 			}
-			if (drawType == 1)
+			else if (drawMode == 1)
 			{
 				cellColor.r = glm::mix(0, 255, (glm::clamp(pressureGrid[x][y], pressureMinMax.x, pressureMinMax.y) - pressureMinMax.x) / (pressureMinMax.y - pressureMinMax.x));
 				cellColor.g = 0;
 				cellColor.b = glm::mix(255, 0, (glm::clamp(pressureGrid[x][y], pressureMinMax.x, pressureMinMax.y) - pressureMinMax.x) / (pressureMinMax.y - pressureMinMax.x));
 				cellColor.a = 255;
 			}
-			if (drawType == 2)
+			else if (drawMode == 2)
 			{
 				cellColor.r = glm::mix(0, 255, (glm::clamp(curlGrid[x][y], curlMinMax.x, curlMinMax.y) - curlMinMax.x) / (curlMinMax.y - curlMinMax.x));
 				cellColor.g = 0;
 				cellColor.b = glm::mix(255, 0, (glm::clamp(curlGrid[x][y], curlMinMax.x, curlMinMax.y) - curlMinMax.x) / (curlMinMax.y - curlMinMax.x));
 				cellColor.a = 255;
 			}
-			DrawRectangle(x * renderScale, y * renderScale, renderScale, renderScale, cellColor);
+			DrawPixel(x, y, cellColor);
 		}
 	}
-	
+	EndTextureMode();
+
+	BeginTextureMode(linesRenderTexture);
+	ClearBackground(BLANK);
 	if (drawLines)
 	{
 		for (int x = 1; x < sizeX - 1; x += lineSize)
@@ -187,11 +196,23 @@ void fluid::draw()
 			}
 		}
 	}
+	EndTextureMode();
+
+	BeginTextureMode(screenRenderTexture);
+	ClearBackground(BLACK);
+	DrawTextureEx(fluidRenderTexture.texture, { 0,0 }, 0, renderScale, WHITE);
+	DrawTexture(linesRenderTexture.texture, 0, 0, WHITE);
+	EndTextureMode();
+
+	window.BeginDrawing();
+	window.ClearBackground(BLACK);
+	DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * sizeX * renderScale,1.0f * sizeY * renderScale }, { 0,0 }, WHITE);
 	window.EndDrawing();
 	if (frames <= maxDrawFrames)
 	{
 		std::string fileName = "frame" + std::to_string(frames) + ".png";
-		TakeScreenshot(fileName.c_str()); //ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+		Image screenShot = LoadImageFromTexture(screenRenderTexture.texture);
+		ExportImage(screenShot, fileName.c_str());	// ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
 	}
 }
 
@@ -199,18 +220,36 @@ void fluid::update()
 {
 	frames++;
 	cout << "frame " << frames << ", at " << window.GetFPS() << " fps" << endl;
+
+	// Vorticity Confinement Step
 	updateFlowGrid();
 	updateCurlGrid();
 	vorticityConfinement();
-	project();
-	updateSources();
-	updateDyeSources();
+
+	// Incompressibility Step
+	solveIncompressibility();
+
+	// Advection Step
+	advectVelocity();
+	if (drawMode == 0)
+	{
+		updateFlowGrid();
+		updateDyeSources();
+		advectDye();
+	}
+
+	// Dye Decay and Diffuse Step
+	if (drawMode == 0)
+	{
+		decayDye();
+		diffuseDye();
+	}
+
+	// Update Flow Grid for Rendering
 	updateFlowGrid();
-	advect();
-	decayDye();
 }
 
-void fluid::updateSources()
+void fluid::updateFlowSources()
 {
 	for (int x = 0; x < sizeX + 1; x++)
 	{
@@ -260,39 +299,42 @@ void fluid::updateFlowGrid()
 	}
 }
 
-glm::dvec2 fluid::getGridVelocity(int x, int y)
-{
-	glm::dvec2 velocity = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
-									flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
-	return velocity;
-}
-
 void fluid::decayDye()
 {
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
 		{
-			if (fluidField[x][y] == 0)
+			if (fluidField[x][y] == 1)
 			{
-				continue;
+				dye[x][y] = baseDye - decayValue * (baseDye - dye[x][y]);
 			}
-
-			dye[x][y] = baseDye - decayValue * (baseDye - dye[x][y]);
-
-			int fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-
-			glm::dvec4 rDye = (double)fluidField[x + 1][y] * dye[x + 1][y];
-			glm::dvec4 lDye = (double)fluidField[x - 1][y] * dye[x - 1][y];
-			glm::dvec4 uDye = (double)fluidField[x][y - 1] * dye[x][y - 1];
-			glm::dvec4 dDye = (double)fluidField[x][y + 1] * dye[x][y + 1];
-			glm::dvec4 avgDye = (1.0 / fluidCount) * (rDye + lDye + uDye + dDye);
-			dye[x][y] = (1.0 - diffuseValue) * dye[x][y] + avgDye * diffuseValue;
 		}
 	}
 }
 
-void fluid::project()
+void fluid::diffuseDye()
+{
+	for (int x = 1; x < sizeX - 1; x++)
+	{
+		for (int y = 1; y < sizeY - 1; y++)
+		{
+			if (fluidField[x][y] == 1)
+			{
+				int fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+
+				glm::dvec4 rDye = (double)fluidField[x + 1][y] * dye[x + 1][y];
+				glm::dvec4 lDye = (double)fluidField[x - 1][y] * dye[x - 1][y];
+				glm::dvec4 uDye = (double)fluidField[x][y - 1] * dye[x][y - 1];
+				glm::dvec4 dDye = (double)fluidField[x][y + 1] * dye[x][y + 1];
+				glm::dvec4 avgDye = (1.0 / fluidCount) * (rDye + lDye + uDye + dDye);
+				dye[x][y] = (1.0 - diffuseValue) * dye[x][y] + avgDye * diffuseValue;
+			}
+		}
+	}
+}
+
+void fluid::solveIncompressibility()
 {
 	for (int x = 0; x < sizeX; x++)
 	{
@@ -303,7 +345,7 @@ void fluid::project()
 	}
 	for (int i = 0; i < relaxationSteps; i++)
 	{
-		updateSources();
+		updateFlowSources();
 		for (int x = 1; x < sizeX - 1; x++)
 		{
 			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
@@ -325,7 +367,7 @@ void fluid::project()
 				pressureGrid[x][y] -= divergence / (fluidCount * timeStep);
 			}
 		}
-		updateSources();
+		updateFlowSources();
 		for (int x = 1; x < sizeX - 1; x++)
 		{
 			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
@@ -350,9 +392,8 @@ void fluid::project()
 	}
 }
 
-void fluid::advect()
+void fluid::advectVelocity()
 {
-	vector<vector<glm::dvec4>> newDye = dye;
 	vector<vector<double>> newFlowX = flowX;
 	vector<vector<double>> newFlowY = flowY;
 	for (int x = 1; x < flowX.size() - 1; x++)
@@ -426,7 +467,11 @@ void fluid::advect()
 	}
 	flowX = newFlowX;
 	flowY = newFlowY;
-	
+}
+
+void fluid::advectDye()
+{
+	vector<vector<glm::dvec4>> newDye = dye;
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -473,22 +518,16 @@ void fluid::advect()
 	dye = newDye;
 }
 
-double fluid::curl(int x, int y)
-{
-	double curl = fluidField[x][y + 1] * flowGrid[x][y + 1].x -
-				  fluidField[x][y - 1] * flowGrid[x][y - 1].x +
-			   	  fluidField[x - 1][y] * flowGrid[x - 1][y].y -
-				  fluidField[x + 1][y] * flowGrid[x + 1][y].y;
-	return curl;
-}
-
 void fluid::updateCurlGrid()
 {
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
 		{
-			curlGrid[x][y] = curl(x, y);
+			curlGrid[x][y] = fluidField[x][y + 1] * flowGrid[x][y + 1].x -
+							 fluidField[x][y - 1] * flowGrid[x][y - 1].x +
+							 fluidField[x - 1][y] * flowGrid[x - 1][y].y -
+							 fluidField[x + 1][y] * flowGrid[x + 1][y].y;;
 		}
 	}
 }
@@ -507,10 +546,10 @@ void fluid::vorticityConfinement()
 
 			direction = vorticity / (length(direction) + 1e-5f) * direction;
 
-			newFlowX[x][y] += curl(x, y) * direction.x * timeStep / 2;
-			newFlowX[x + 1][y] += curl(x, y) * direction.x * timeStep / 2;
-			newFlowY[x][y] += curl(x, y) * direction.y * timeStep / 2;
-			newFlowY[x][y + 1] += curl(x, y) * direction.y * timeStep / 2;
+			newFlowX[x][y] += curlGrid[x][y] * direction.x * timeStep / 2;
+			newFlowX[x + 1][y] += curlGrid[x][y] * direction.x * timeStep / 2;
+			newFlowY[x][y] += curlGrid[x][y] * direction.y * timeStep / 2;
+			newFlowY[x][y + 1] += curlGrid[x][y] * direction.y * timeStep / 2;
 		}
 	}
 	flowX = newFlowX;
