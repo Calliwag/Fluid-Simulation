@@ -5,6 +5,7 @@
 
 # Generated .png files
 *.png
+!Input.png
 
 # User-specific files
 *.rsuser
