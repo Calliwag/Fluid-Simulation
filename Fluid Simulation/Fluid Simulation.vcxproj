@@ -132,7 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Fluid Simulation.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Fluid.cpp" />
   </ItemGroup>
   <ItemGroup>
