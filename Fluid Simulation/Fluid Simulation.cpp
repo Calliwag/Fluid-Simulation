@@ -4,6 +4,8 @@ int main()
 {
 	Image inputImage = LoadImage("Input.png");
 	fluid newFluid(inputImage, {1,0,0,1});
+	newFluid.drawType = 1;
+	newFluid.pressureMinMax = { -10,10 };
 
 	//int streamWidth = 2;
 

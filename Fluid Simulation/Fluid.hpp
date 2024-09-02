@@ -45,7 +45,7 @@ public:
 	glm::dvec2 curlMinMax = { -0,0 };
 	bool drawLines = 1;
 	int lineSize = 4;
-	int maxDrawFrames = 10;
+	int maxDrawFrames = 0;
 
 	// Constructor
 	fluid(int _sizeX, int _sizeY);
