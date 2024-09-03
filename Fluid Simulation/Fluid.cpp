@@ -1,10 +1,10 @@
 #include "Fluid.hpp"
-raylib::Window window(100, 100, "Fluid Simulation");
 
 using namespace std;
 
 fluid::fluid(int _sizeX, int _sizeY)
 {
+	raylib::Window window(100, 100, "Fluid Simulation");
 	sizeX = _sizeX;
 	sizeY = _sizeY;
 
@@ -53,8 +53,14 @@ fluid::fluid(int _sizeX, int _sizeY)
 	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 }
 
-fluid::fluid(Image layoutImage, glm::dvec4 dyeColor)
+fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames)
 {
+	renderScale = _renderScale;
+	drawMode = _drawMode;
+	drawMinMax = _drawMinMax;
+	drawLines = _drawLines;
+	lineSize = _lineSize;
+	maxFrames = _maxFrames;
 	Color* layoutImageColorsArr = LoadImageColors(layoutImage);
 	vector<vector<glm::ivec4>>  layoutImageColors = {};
 	layoutImageColors.resize(layoutImage.width);
@@ -107,7 +113,11 @@ fluid::fluid(Image layoutImage, glm::dvec4 dyeColor)
 		flowY[i].resize(sizeY + 1);
 		sourceY[i].resize(sizeY + 1);
 	}
+
+	SetTraceLogLevel(5);
+	raylib::Window window(100, 100, "Fluid Simulation");
 	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);
 
 	for (int x = 0; x < sizeX; x++)
 	{
@@ -165,16 +175,16 @@ void fluid::draw()
 			}
 			else if (drawMode == 1)
 			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(pressureGrid[x][y], pressureMinMax.x, pressureMinMax.y) - pressureMinMax.x) / (pressureMinMax.y - pressureMinMax.x));
+				cellColor.r = glm::mix(0, 255, (glm::clamp(pressureGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(pressureGrid[x][y], pressureMinMax.x, pressureMinMax.y) - pressureMinMax.x) / (pressureMinMax.y - pressureMinMax.x));
+				cellColor.b = glm::mix(255, 0, (glm::clamp(pressureGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.a = 255;
 			}
 			else if (drawMode == 2)
 			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(curlGrid[x][y], curlMinMax.x, curlMinMax.y) - curlMinMax.x) / (curlMinMax.y - curlMinMax.x));
+				cellColor.r = glm::mix(0, 255, (glm::clamp(curlGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(curlGrid[x][y], curlMinMax.x, curlMinMax.y) - curlMinMax.x) / (curlMinMax.y - curlMinMax.x));
+				cellColor.b = glm::mix(255, 0, (glm::clamp(curlGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.a = 255;
 			}
 			DrawPixel(x, y, cellColor);
@@ -191,8 +201,8 @@ void fluid::draw()
 			for (int y = 1; y < sizeY - 1; y += lineSize)
 			{
 				glm::dvec2 velocity = flowGrid[x][y];
-				DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 1.0 / lineSize) * renderScale + renderScale / 2, (y + velocity.y * 1.0 / lineSize) * renderScale + renderScale / 2, WHITE);
-				DrawCircle((x + velocity.x * 1.0 / lineSize) * renderScale + renderScale / 2, (y + velocity.y * 1.0 / lineSize) * renderScale + renderScale / 2, 2, WHITE);
+				DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2, WHITE);
+				DrawCircle((x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2, 2, WHITE);
 			}
 		}
 	}
@@ -208,11 +218,15 @@ void fluid::draw()
 	window.ClearBackground(BLACK);
 	DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * sizeX * renderScale,1.0f * sizeY * renderScale }, { 0,0 }, WHITE);
 	window.EndDrawing();
-	if (frames <= maxDrawFrames)
+	if (frames <= maxFrames)
 	{
 		std::string fileName = "frame" + std::to_string(frames) + ".png";
 		Image screenShot = LoadImageFromTexture(screenRenderTexture.texture);
 		ExportImage(screenShot, fileName.c_str());	// ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+	}
+	if (frames == maxFrames)
+	{
+		system("ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4");
 	}
 }
 

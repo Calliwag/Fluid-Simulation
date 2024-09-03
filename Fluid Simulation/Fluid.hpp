@@ -4,8 +4,6 @@
 #include "glm/glm.hpp"
 #include "raylib-cpp.hpp"
 
-extern raylib::Window window;
-
 class fluid
 {
 public:
@@ -31,28 +29,28 @@ public:
 	std::vector<std::vector<double>> pressureGrid = {};
 
 	// Simulation Parameters
-	int sizeX = 0;
-	int sizeY = 0;
+	int sizeX;
+	int sizeY;
 	int frames = 0;
 	double timeStep = 1.0 / 10;
 	double vorticity = 0.0;
 	int relaxationSteps = 50;
 
 	// Rendering
-	int renderScale = 6;
-	int drawMode = 0; // 0 = dye, 1 = pressure, 2 = curl
-	glm::dvec2 pressureMinMax = { -0,0 };
-	glm::dvec2 curlMinMax = { -0,0 };
-	bool drawLines = 1;
-	int lineSize = 4;
-	int maxDrawFrames = 0;
+	raylib::Window window;
+	int renderScale;
+	int drawMode; // 0 = dye, 1 = pressure, 2 = curl
+	glm::dvec2 drawMinMax;
+	bool drawLines;
+	int lineSize;
+	int maxFrames;
 	RenderTexture2D fluidRenderTexture;
 	RenderTexture2D linesRenderTexture;
 	RenderTexture2D screenRenderTexture;
 
 	// Constructor
 	fluid(int _sizeX, int _sizeY);
-	fluid(Image layoutImage, glm::dvec4 dyeColor);
+	fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames);
 
 	// Drawing
 	void draw();

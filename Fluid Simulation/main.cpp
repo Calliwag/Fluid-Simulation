@@ -1,77 +1,80 @@
 #include "Fluid.hpp"
+#include <argparse/argparse.hpp>
 
-int main()
+int main(int argc, char* argv[])
 {
-	Image inputImage = LoadImage("Input.png");
-	fluid newFluid(inputImage, {1,0,0,1});
-	newFluid.drawMode = 1;
-	newFluid.pressureMinMax = { -10,10 };
-	newFluid.curlMinMax = { -10,10 };
+	/*
+	Basic Commands ".\Fluid Simulation.exe" Input.png --DrawMode 1 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
+	Additional Commands --MaxFrames 3600
+	*/
 
-	//int streamWidth = 2;
+	argparse::ArgumentParser program("FluidSimulation");
 
-	//for (int x = newFluid.sizeX / 2 - streamWidth / 2; x <= newFluid.sizeX / 2 + streamWidth / 2; x += 1)
-	//{
-	//	for (int y = 1; y < 3; y++)
-	//	{
-	//		newFluid.sourceY[x][y] = 5;
-	//	}
-	//	newFluid.dyeSource[x][2] = { 1,1,0,1 };
-	//}
-	//newFluid.pressureMinMax = { -30.0,15.0 };
+	program.add_argument("SourceImage")
+		.help("Specify name of image source file (including file extension).");
 
-	//for (int y = newFluid.sizeY / 2 - streamWidth / 2; y <= newFluid.sizeY / 2 + streamWidth / 2; y += 1)
-	//{
-	//	for (int x = 1; x < 3; x++)
-	//	{
-	//		newFluid.sourceX[x][y] = 6;
-	//		newFluid.sourceX[newFluid.sizeX - x][y] = -6;
-	//	}
-	//	newFluid.dyeSource[2][y] = { 1,0,0,1 };
-	//	newFluid.dyeSource[newFluid.sizeX - 3][y] = { 0,1,0,1 };
-	//}
-	//for (int x = newFluid.sizeX / 2 - streamWidth / 2; x <= newFluid.sizeX / 2 + streamWidth / 2; x += 1)
-	//{
-	//	for (int y = 1; y < 3; y++)
-	//	{
-	//		newFluid.sourceY[x][y] = 6;
-	//		newFluid.sourceY[x][newFluid.sizeY - y] = -6;
-	//	}
-	//	newFluid.dyeSource[x][2] = { 0,0,1,1 };
-	//	newFluid.dyeSource[x][newFluid.sizeY - 3] = { 1,1,0,1 };
-	//}
+	program.add_argument("--DrawMode")
+		.help("What the simulation renders: 0 = Dye, 1 = Pressure, 2 = Vorticity. --DrawMinMax should be used if --DrawMode is set to 1 or 2.")
+		.scan<'i', int>()
+		.default_value(0);
 
-	//for (int x = 0; x < newFluid.sizeX; x++)
-	//{
-	//	for (int y = 0; y < newFluid.sizeY; y++)
-	//	{
-	//		if (sqrt(pow((x - newFluid.sizeX / 2 + newFluid.sizeX / 3),2) + pow((y - newFluid.sizeY / 2),2)) < 9)
-	//		{
-	//			newFluid.fluidField[x][y] = 0;
-	//		}
-	//	}
-	//}
-	//for (int y = 0; y < newFluid.sizeY; y++)
-	//{
-	//	for (int x = 1; x < 3; x++)
-	//	{
-	//		double r = GetRandomValue(-10, 10) / 1000.0;
-	//		newFluid.sourceX[x][y] = 5 + r;
-	//		newFluid.sourceX[newFluid.sizeX - x][y] = 5 + r;
-	//	}
-	//}
-	//for (int y = newFluid.sizeY / 2 - 2; y <= newFluid.sizeY / 2 + 2; y++)
-	//{
-	//	newFluid.dyeSource[2][y] = { 1,0,0,1 };
-	//}
-	//newFluid.pressureMinMax = { -15.0,15.0 };
-	//newFluid.curlMinMax = { -10,10 };
+	program.add_argument("--DrawMinMax")
+		.help("Min and max values for rendering pressure/vorticity. Does nothing if DrawMode is set to 0.")
+		.nargs(2)
+		.scan<'i', int>()
+		.default_value(std::vector<int>{0, 0});
 
-	while (true)
+	program.add_argument("--RenderScale")
+		.help("What scale the simulation is rendered at.")
+		.scan<'i', int>()
+		.default_value(1);
+
+	program.add_argument("--DrawLines")
+		.help("Should velocity lines be rendered and at what size (boolean, int).")
+		.nargs(2)
+		.scan<'i', int>()
+		.default_value(std::vector<int>{0});
+
+	program.add_argument("--MaxFrames")
+		.help("How many frames should be saved as .png files")
+		.scan<'i', int>()
+		.default_value(0);
+
+	try
+	{
+		program.parse_args(argc, argv);
+	}
+	catch (const std::exception& err)
+	{
+		std::cerr << err.what() << std::endl;
+		std::cerr << program;
+		return 1;
+	}
+
+	Image inputImage = LoadImage(program.get<>("SourceImage").c_str());
+	fluid newFluid(inputImage,
+		program.get<int>("--RenderScale"),
+		program.get<int>("--DrawMode"),
+		glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
+		program.get<std::vector<int>>("--DrawLines")[0],
+		program.get<std::vector<int>>("--DrawLines")[1],
+		{1,0,0,1},
+		program.get<int>("--MaxFrames"));
+
+	bool exitWindow = 0;
+	while (!exitWindow)
 	{
 		newFluid.update();
 		newFluid.draw();
+		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
+		{
+			exitWindow = true;
+			std::cout << "Simulation closed by user" << std::endl;
+		}
 	}
+
+	CloseWindow();
+	return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
