@@ -1,17 +1,22 @@
 #include "Fluid.hpp"
 #include <argparse/argparse.hpp>
 
+std::shared_ptr<fluid> newFluid;
+
 int main(int argc, char* argv[])
 {
 	/*
-	Basic Commands ".\Fluid Simulation.exe" Input.png --DrawMode 1 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
-	Additional Commands --MaxFrames 3600
+	Basic Commands ".\Fluid Simulation.exe" Input.png --DrawMode 0 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
+	Additional Commands --MaxFrames 3600 --DyeSourceImage DyeInput.png
 	*/
 
 	argparse::ArgumentParser program("FluidSimulation");
 
 	program.add_argument("SourceImage")
 		.help("Specify name of image source file (including file extension).");
+
+	program.add_argument("--DyeSourceImage")
+		.help("Image to determine dye sources. Not strictly needed for dye mode.");
 
 	program.add_argument("--DrawMode")
 		.help("What the simulation renders: 0 = Dye, 1 = Pressure, 2 = Vorticity. --DrawMinMax should be used if --DrawMode is set to 1 or 2.")
@@ -52,20 +57,35 @@ int main(int argc, char* argv[])
 	}
 
 	Image inputImage = LoadImage(program.get<>("SourceImage").c_str());
-	fluid newFluid(inputImage,
-		program.get<int>("--RenderScale"),
-		program.get<int>("--DrawMode"),
-		glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
-		program.get<std::vector<int>>("--DrawLines")[0],
-		program.get<std::vector<int>>("--DrawLines")[1],
-		{1,0,0,1},
-		program.get<int>("--MaxFrames"));
+	if (program.is_used("--DyeSourceImage"))
+	{
+		Image dyeInputImage = LoadImage(program.get<>("--DyeSourceImage").c_str());
+		newFluid = std::make_shared<fluid>(inputImage,
+			dyeInputImage,
+			program.get<int>("--RenderScale"),
+			program.get<int>("--DrawMode"),
+			glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
+			program.get<std::vector<int>>("--DrawLines")[0],
+			program.get<std::vector<int>>("--DrawLines")[1],
+			program.get<int>("--MaxFrames"));
+	}
+	else
+	{
+		newFluid = std::make_shared<fluid>(inputImage,
+			program.get<int>("--RenderScale"),
+			program.get<int>("--DrawMode"),
+			glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
+			program.get<std::vector<int>>("--DrawLines")[0],
+			program.get<std::vector<int>>("--DrawLines")[1],
+			glm::dvec4{ 1,0,0,1 },
+			program.get<int>("--MaxFrames"));
+	}
 
 	bool exitWindow = 0;
 	while (!exitWindow)
 	{
-		newFluid.update();
-		newFluid.draw();
+		newFluid->update();
+		newFluid->draw();
 		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
 		{
 			exitWindow = true;

@@ -150,6 +150,120 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 }
 
+fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames)
+{
+	renderScale = _renderScale;
+	drawMode = _drawMode;
+	drawMinMax = _drawMinMax;
+	drawLines = _drawLines;
+	lineSize = _lineSize;
+	maxFrames = _maxFrames;
+
+	if (!(layoutImage.width == dyeImage.width && layoutImage.height == dyeImage.height))
+	{
+		cout << "Layout image must have same dimensions as dye image." << endl;
+		return;
+	}
+
+	Color* layoutImageColorsArr = LoadImageColors(layoutImage);
+	Color* dyeImageColorsArr = LoadImageColors(dyeImage);
+	vector<vector<glm::ivec4>> layoutImageColors = {};
+	vector<vector<glm::ivec4>> dyeImageColors = {};
+	layoutImageColors.resize(layoutImage.width);
+	dyeImageColors.resize(layoutImage.width);
+	for (int x = 0; x < layoutImage.width; x++)
+	{
+		layoutImageColors[x].resize(layoutImage.height);
+		dyeImageColors[x].resize(layoutImage.height);
+	}
+	for (int x = 0; x < layoutImage.width; x++)
+	{
+		for (int y = 0; y < layoutImage.height; y++)
+		{
+			layoutImageColors[x][y].x = layoutImageColorsArr[(y * layoutImage.width) + x].r;
+			layoutImageColors[x][y].y = layoutImageColorsArr[(y * layoutImage.width) + x].g;
+			layoutImageColors[x][y].z = layoutImageColorsArr[(y * layoutImage.width) + x].b;
+			layoutImageColors[x][y].w = layoutImageColorsArr[(y * layoutImage.width) + x].a;
+			dyeImageColors[x][y].x = dyeImageColorsArr[(y * layoutImage.width) + x].r;
+			dyeImageColors[x][y].y = dyeImageColorsArr[(y * layoutImage.width) + x].g;
+			dyeImageColors[x][y].z = dyeImageColorsArr[(y * layoutImage.width) + x].b;
+			dyeImageColors[x][y].w = dyeImageColorsArr[(y * layoutImage.width) + x].a;
+		}
+	}
+	delete [] layoutImageColorsArr;
+	delete [] dyeImageColorsArr;
+
+	sizeX = layoutImage.width;
+	sizeY = layoutImage.height;
+
+	dye.resize(sizeX);
+	dyeSource.resize(sizeX);
+	pressureGrid.resize(sizeX);
+	fluidField.resize(sizeX);
+	flowGrid.resize(sizeX);
+	curlGrid.resize(sizeX);
+	for (int i = 0; i < sizeX; i++)
+	{
+		dye[i].resize(sizeY, baseDye);
+		dyeSource[i].resize(sizeY, baseDye);
+		pressureGrid[i].resize(sizeY);
+		fluidField[i].resize(sizeY, 1);
+		flowGrid[i].resize(sizeY);
+		curlGrid[i].resize(sizeY);
+	}
+
+	flowX.resize(sizeX + 1);
+	sourceX.resize(sizeX + 1);
+	for (int i = 0; i < sizeX + 1; i++)
+	{
+		flowX[i].resize(sizeY);
+		sourceX[i].resize(sizeY);
+	}
+	flowY.resize(sizeX);
+	sourceY.resize(sizeX);
+	for (int i = 0; i < sizeX; i++)
+	{
+		flowY[i].resize(sizeY + 1);
+		sourceY[i].resize(sizeY + 1);
+	}
+
+	SetTraceLogLevel(5);
+	raylib::Window window(100, 100, "Fluid Simulation");
+	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);
+
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			if (layoutImageColors[x][y] == glm::ivec4{ 255,255,255,255 })
+			{
+				fluidField[x][y] = 0;
+				continue;
+			}
+			if (layoutImageColors[x][y].r == 255 && layoutImageColors[x][y].g == 0)
+			{
+				sourceX[x][y] = layoutImageColors[x][y].b / 25.5;
+				sourceX[x + 1][y] = layoutImageColors[x][y].b / 25.5;
+			}
+			else if (layoutImageColors[x][y].g == 255 && layoutImageColors[x][y].r == 0)
+			{
+				sourceY[x][y] = layoutImageColors[x][y].b / 25.5;
+				sourceY[x][y + 1] = layoutImageColors[x][y].b / 25.5;
+			}
+
+			if (dyeImageColors[x][y].a != 0)
+			{
+				dyeSource[x][y] = glm::dvec4(dyeImageColors[x][y]) / 255.0;
+			}
+		}
+	}
+
+	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
+	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
+	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
+}
+
 void fluid::draw()
 {
 	BeginTextureMode(fluidRenderTexture);

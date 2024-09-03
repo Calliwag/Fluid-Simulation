@@ -51,6 +51,7 @@ public:
 	// Constructor
 	fluid(int _sizeX, int _sizeY);
 	fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames);
+	fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames);
 
 	// Drawing
 	void draw();
