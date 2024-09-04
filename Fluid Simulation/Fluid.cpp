@@ -12,7 +12,7 @@ fluid::fluid(int _sizeX, int _sizeY)
 	dyeSource.resize(sizeX);
 	pressureGrid.resize(sizeX);
 	fluidField.resize(sizeX);
-	flowGrid.resize(sizeX);
+	flowGrid.resize(sizeX, sizeY);
 	curlGrid.resize(sizeX);
 	for (int i = 0; i < sizeX; i++)
 	{
@@ -20,7 +20,7 @@ fluid::fluid(int _sizeX, int _sizeY)
 		dyeSource[i].resize(sizeY, baseDye);
 		pressureGrid[i].resize(sizeY);
 		fluidField[i].resize(sizeY);
-		flowGrid[i].resize(sizeY);
+		//flowGrid[i].resize(sizeY);
 		curlGrid[i].resize(sizeY);
 	}
 
@@ -32,11 +32,11 @@ fluid::fluid(int _sizeX, int _sizeY)
 		}
 	}
 
-	flowX.resize(sizeX + 1);
+	flowX.resize(sizeX + 1, sizeY);
 	sourceX.resize(sizeX + 1);
 	for (int i = 0; i < sizeX + 1; i++)
 	{
-		flowX[i].resize(sizeY);
+		//flowX[i].resize(sizeY);
 		sourceX[i].resize(sizeY);
 	}
 	flowY.resize(sizeX);
@@ -87,7 +87,7 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 	dyeSource.resize(sizeX);
 	pressureGrid.resize(sizeX);
 	fluidField.resize(sizeX);
-	flowGrid.resize(sizeX);
+	flowGrid.resize(sizeX, sizeY);
 	curlGrid.resize(sizeX);
 	for (int i = 0; i < sizeX; i++)
 	{
@@ -95,15 +95,15 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 		dyeSource[i].resize(sizeY, baseDye);
 		pressureGrid[i].resize(sizeY);
 		fluidField[i].resize(sizeY,1);
-		flowGrid[i].resize(sizeY);
+		//flowGrid[i].resize(sizeY);
 		curlGrid[i].resize(sizeY);
 	}
 
-	flowX.resize(sizeX + 1);
+	flowX.resize(sizeX + 1, sizeY);
 	sourceX.resize(sizeX + 1);
 	for (int i = 0; i < sizeX + 1; i++)
 	{
-		flowX[i].resize(sizeY);
+		//flowX[i].resize(sizeY);
 		sourceX[i].resize(sizeY);
 	}
 	flowY.resize(sizeX);
@@ -203,7 +203,7 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 	dyeSource.resize(sizeX);
 	pressureGrid.resize(sizeX);
 	fluidField.resize(sizeX);
-	flowGrid.resize(sizeX);
+	flowGrid.resize(sizeX, sizeY);
 	curlGrid.resize(sizeX);
 	for (int i = 0; i < sizeX; i++)
 	{
@@ -211,15 +211,15 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 		dyeSource[i].resize(sizeY, baseDye);
 		pressureGrid[i].resize(sizeY);
 		fluidField[i].resize(sizeY, 1);
-		flowGrid[i].resize(sizeY);
+		//flowGrid[i].resize(sizeY);
 		curlGrid[i].resize(sizeY);
 	}
 
-	flowX.resize(sizeX + 1);
+	flowX.resize(sizeX + 1, sizeY);
 	sourceX.resize(sizeX + 1);
 	for (int i = 0; i < sizeX + 1; i++)
 	{
-		flowX[i].resize(sizeY);
+		//flowX[i].resize(sizeY);
 		sourceX[i].resize(sizeY);
 	}
 	flowY.resize(sizeX);
@@ -529,11 +529,11 @@ void fluid::solveIncompressibility()
 
 void fluid::advectVelocity()
 {
-	vector<vector<double>> newFlowX = flowX;
+	Grid<double> newFlowX = flowX;
 	vector<vector<double>> newFlowY = flowY;
-	for (int x = 1; x < flowX.size() - 1; x++)
+	for (int x = 1; x < sizeX; x++)
 	{
-		for (int y = 1; y < flowX[x].size() - 1; y++)
+		for (int y = 1; y < sizeY - 1; y++)
 		{
 			glm::dvec2 velocity = { flowX[x][y], (flowY[x][y] + flowY[x][y + 1] + flowY[x - 1][y] + flowY[x - 1][y + 1]) / 4.0 };
 			glm::dvec2 sourceFrac = glm::dvec2{ x,y } - velocity * timeStep;
@@ -542,9 +542,9 @@ void fluid::advectVelocity()
 				double ratio = (1 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
-			if (sourceFrac.x > flowX.size() - 2)
+			if (sourceFrac.x > sizeX - 1)
 			{
-				double ratio = (flowX.size() - 2 - x) / (sourceFrac.x - x);
+				double ratio = (sizeX - 1 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y < 1)
@@ -552,9 +552,9 @@ void fluid::advectVelocity()
 				double ratio = (1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
-			if (sourceFrac.y > flowX[x].size() - 2)
+			if (sourceFrac.y > sizeY - 2)
 			{
-				double ratio = (flowX[x].size() - 2 - y) / (sourceFrac.y - y);
+				double ratio = (sizeY - 2 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			glm::ivec2 source = sourceFrac;
@@ -669,7 +669,7 @@ void fluid::updateCurlGrid()
 
 void fluid::vorticityConfinement()
 {
-	vector<vector<double>> newFlowX = flowX;
+	Grid<double> newFlowX = flowX;
 	vector<vector<double>> newFlowY = flowY;
 	for (int x = 3; x < sizeX - 3; x++)
 	{

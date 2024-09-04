@@ -201,6 +201,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid.hpp" />
+    <ClInclude Include="Grid.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

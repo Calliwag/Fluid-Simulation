@@ -3,13 +3,15 @@
 #include <vector>
 #include "glm/glm.hpp"
 #include "raylib-cpp.hpp"
+#include "Grid.hpp"
+//#include "cxxpool.h"
 
 class fluid
 {
 public:
 
 	// Simulation Grids
-	std::vector<std::vector<double>> flowX = {};
+	Grid<double> flowX = {};
 	std::vector<std::vector<double>> sourceX = {};
 	std::vector<std::vector<double>> flowY = {};
 	std::vector<std::vector<double>> sourceY = {};
@@ -24,7 +26,7 @@ public:
 	double diffuseValue = 0;
 
 	// Temporary Value Storage Grids
-	std::vector<std::vector<glm::dvec2>> flowGrid = {};
+	Grid<glm::dvec2> flowGrid;
 	std::vector<std::vector<double>> curlGrid = {};
 	std::vector<std::vector<double>> pressureGrid = {};
 
@@ -47,6 +49,9 @@ public:
 	RenderTexture2D fluidRenderTexture;
 	RenderTexture2D linesRenderTexture;
 	RenderTexture2D screenRenderTexture;
+
+	// ThreadPool
+	//cxxpool::thread_pool pool{ 4 };
 
 	// Constructor
 	fluid(int _sizeX, int _sizeY);
