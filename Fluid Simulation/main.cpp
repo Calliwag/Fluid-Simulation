@@ -6,8 +6,8 @@ std::shared_ptr<fluid> newFluid;
 int main(int argc, char* argv[])
 {
 	/*
-	Basic Commands ".\Fluid Simulation.exe" Input.png --DrawMode 0 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
-	Additional Commands --MaxFrames 3600 --DyeSourceImage DyeInput.png
+	Basic Commands ".\Fluid Simulation.exe" Input.png --DyeSourceImage DyeInput.png --DrawMode 0 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
+	Additional Commands --MaxFrames 3600
 	*/
 
 	argparse::ArgumentParser program("FluidSimulation");

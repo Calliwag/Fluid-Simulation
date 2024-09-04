@@ -1,6 +1,8 @@
 #ifndef RAYLIB_CPP_INCLUDE_WAVE_HPP_
 #define RAYLIB_CPP_INCLUDE_WAVE_HPP_
 
+#pragma warning( disable : 26439 26495 4083 )
+
 #include <string>
 
 #include "./raylib.hpp"

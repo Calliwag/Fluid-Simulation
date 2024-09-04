@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#pragma warning( disable : 26439 26495 4083 )
+
 #include "./raylib.hpp"
 #include "./raylib-cpp-utils.hpp"
 #include "./Mesh.hpp"

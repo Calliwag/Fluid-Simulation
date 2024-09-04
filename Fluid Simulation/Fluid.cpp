@@ -123,22 +123,25 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 	{
 		for (int y = 0; y < sizeY; y++)
 		{
-			if (layoutImageColors[x][y] == glm::ivec4{ 255,255,255,255 })
+			if (layoutImageColors[x][y] == glm::ivec4{ 0,0,0,255 })
 			{
 				fluidField[x][y] = 0;
 				continue;
 			}
-			if (layoutImageColors[x][y].r == 255 && layoutImageColors[x][y].g == 0)
+
+			int r = layoutImageColors[x][y].r;
+			int g = layoutImageColors[x][y].g;
+			int b = layoutImageColors[x][y].b;
+			int a = layoutImageColors[x][y].a;
+
+			if ((r != 0 || g != 0) && b != 128)
 			{
-				sourceX[x][y] = layoutImageColors[x][y].b / 25.5;
-				sourceX[x + 1][y] = layoutImageColors[x][y].b / 25.5;
+				sourceX[x][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
+				sourceX[x + 1][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
+				sourceY[x][y] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
+				sourceY[x][y + 1] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
 			}
-			else if (layoutImageColors[x][y].g == 255 && layoutImageColors[x][y].r == 0)
-			{
-				sourceY[x][y] = layoutImageColors[x][y].b / 25.5;
-				sourceY[x][y + 1] = layoutImageColors[x][y].b / 25.5;
-			}
-			else if (layoutImageColors[x][y].r == 0 && layoutImageColors[x][y].g == 0 && layoutImageColors[x][y].b != 0)
+			else if (r == 0 && g == 0 && layoutImageColors[x][y].b != 0)
 			{
 				dyeSource[x][y] = layoutImageColors[x][y].b / 255.0 * dyeColor;
 			}
@@ -236,22 +239,26 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 	{
 		for (int y = 0; y < sizeY; y++)
 		{
-			if (layoutImageColors[x][y] == glm::ivec4{ 255,255,255,255 })
+			if (layoutImageColors[x][y] == glm::ivec4{ 0,0,0,255 })
 			{
 				fluidField[x][y] = 0;
 				continue;
 			}
-			if (layoutImageColors[x][y].r == 255 && layoutImageColors[x][y].g == 0)
-			{
-				sourceX[x][y] = layoutImageColors[x][y].b / 25.5;
-				sourceX[x + 1][y] = layoutImageColors[x][y].b / 25.5;
-			}
-			else if (layoutImageColors[x][y].g == 255 && layoutImageColors[x][y].r == 0)
-			{
-				sourceY[x][y] = layoutImageColors[x][y].b / 25.5;
-				sourceY[x][y + 1] = layoutImageColors[x][y].b / 25.5;
-			}
 
+			int r = layoutImageColors[x][y].r;
+			int g = layoutImageColors[x][y].g;
+			int b = layoutImageColors[x][y].b;
+			int a = layoutImageColors[x][y].a;
+
+			if ((r != 0 || g != 0) && b != 128)
+			{
+				sourceX[x][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
+				sourceX[x + 1][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
+				//sourceY[x][y] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
+				//sourceY[x][y + 1] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
+				sourceY[x][y] = 0;
+				sourceY[x][y + 1] = 0;
+			}
 			if (dyeImageColors[x][y].a != 0)
 			{
 				dyeSource[x][y] = glm::dvec4(dyeImageColors[x][y]) / 255.0;
@@ -268,9 +275,9 @@ void fluid::draw()
 {
 	BeginTextureMode(fluidRenderTexture);
 	ClearBackground(BLACK);
-	for (int x = 1; x < sizeX - 1; x++)
+	for (int x = 0; x < sizeX; x++)
 	{
-		for (int y = 1; y < sizeY - 1; y++)
+		for (int y = 0; y < sizeY; y++)
 		{
 			Color cellColor = YELLOW;
 			if(fluidField[x][y] == 0)
@@ -315,8 +322,8 @@ void fluid::draw()
 			for (int y = 1; y < sizeY - 1; y += lineSize)
 			{
 				glm::dvec2 velocity = flowGrid[x][y];
-				DrawLine(x * renderScale + renderScale / 2, y * renderScale + renderScale / 2, (x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2, WHITE);
-				DrawCircle((x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2, 2, WHITE);
+				DrawLine(x * renderScale + renderScale / 2.0, y * renderScale + renderScale / 2.0, (x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, WHITE);
+				DrawCircle((x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, 2, WHITE);
 			}
 		}
 	}
@@ -668,9 +675,8 @@ void fluid::vorticityConfinement()
 	{
 		for (int y = 3; y < sizeY - 3; y++)
 		{
-			glm::dvec2 direction;
-			direction.x = abs(curlGrid[x][y - 1]) - abs(curlGrid[x][y + 1]);
-			direction.y = abs(curlGrid[x + 1][y]) - abs(curlGrid[x - 1][y]);
+			glm::dvec2 direction = { abs(curlGrid[x][y - 1]) - abs(curlGrid[x][y + 1]),
+									 abs(curlGrid[x + 1][y]) - abs(curlGrid[x - 1][y]) };
 
 			direction = vorticity / (length(direction) + 1e-5f) * direction;
 
