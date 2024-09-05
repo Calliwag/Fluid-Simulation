@@ -84,15 +84,13 @@ int main(int argc, char* argv[])
 	bool exitWindow = 0;
 	while (!exitWindow)
 	{
-		newFluid->update();
-		newFluid->draw();
+		newFluid->mainLoop();
 		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
 		{
 			exitWindow = true;
 			std::cout << "Simulation closed by user" << std::endl;
 		}
 	}
-
 	CloseWindow();
 	return 0;
 }

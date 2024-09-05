@@ -1,4 +1,5 @@
 #include "Fluid.hpp"
+#include <omp.h>
 
 using namespace std;
 
@@ -8,22 +9,14 @@ fluid::fluid(int _sizeX, int _sizeY)
 	sizeX = _sizeX;
 	sizeY = _sizeY;
 
-	dye.resize(sizeX);
-	dyeSource.resize(sizeX);
-	pressureGrid.resize(sizeX);
-	fluidField.resize(sizeX);
+	dye.resize(sizeX, sizeY, baseDye);
+	dyeSource.resize(sizeX, sizeY, baseDye);
+	pressureGrid.resize(sizeX, sizeY);
+	fluidField.resize(sizeX, sizeY);
 	flowGrid.resize(sizeX, sizeY);
-	curlGrid.resize(sizeX);
-	for (int i = 0; i < sizeX; i++)
-	{
-		dye[i].resize(sizeY, baseDye);
-		dyeSource[i].resize(sizeY, baseDye);
-		pressureGrid[i].resize(sizeY);
-		fluidField[i].resize(sizeY);
-		//flowGrid[i].resize(sizeY);
-		curlGrid[i].resize(sizeY);
-	}
+	curlGrid.resize(sizeX, sizeY);
 
+	// Yes, this is needed.
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -33,21 +26,11 @@ fluid::fluid(int _sizeX, int _sizeY)
 	}
 
 	flowX.resize(sizeX + 1, sizeY);
-	sourceX.resize(sizeX + 1);
-	for (int i = 0; i < sizeX + 1; i++)
-	{
-		//flowX[i].resize(sizeY);
-		sourceX[i].resize(sizeY);
-	}
-	flowY.resize(sizeX);
-	sourceY.resize(sizeX);
-	for (int i = 0; i < sizeX; i++)
-	{
-		flowY[i].resize(sizeY + 1);
-		sourceY[i].resize(sizeY + 1);
-	}
-	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
+	sourceX.resize(sizeX + 1, sizeY);
+	flowY.resize(sizeX, sizeY + 1);
+	sourceY.resize(sizeX, sizeY + 1);
 
+	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
 	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
 	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
@@ -83,36 +66,17 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 	sizeX = layoutImage.width;
 	sizeY = layoutImage.height;
 
-	dye.resize(sizeX);
-	dyeSource.resize(sizeX);
-	pressureGrid.resize(sizeX);
-	fluidField.resize(sizeX);
+	dye.resize(sizeX, sizeY, baseDye);
+	dyeSource.resize(sizeX, sizeY, baseDye);
+	pressureGrid.resize(sizeX, sizeY);
+	fluidField.resize(sizeX, sizeY, 1);
 	flowGrid.resize(sizeX, sizeY);
-	curlGrid.resize(sizeX);
-	for (int i = 0; i < sizeX; i++)
-	{
-		dye[i].resize(sizeY, baseDye);
-		dyeSource[i].resize(sizeY, baseDye);
-		pressureGrid[i].resize(sizeY);
-		fluidField[i].resize(sizeY,1);
-		//flowGrid[i].resize(sizeY);
-		curlGrid[i].resize(sizeY);
-	}
+	curlGrid.resize(sizeX, sizeY);
 
 	flowX.resize(sizeX + 1, sizeY);
-	sourceX.resize(sizeX + 1);
-	for (int i = 0; i < sizeX + 1; i++)
-	{
-		//flowX[i].resize(sizeY);
-		sourceX[i].resize(sizeY);
-	}
-	flowY.resize(sizeX);
-	sourceY.resize(sizeX);
-	for (int i = 0; i < sizeX; i++)
-	{
-		flowY[i].resize(sizeY + 1);
-		sourceY[i].resize(sizeY + 1);
-	}
+	sourceX.resize(sizeX + 1, sizeY);
+	flowY.resize(sizeX, sizeY + 1);
+	sourceY.resize(sizeX, sizeY + 1);
 
 	SetTraceLogLevel(5);
 	raylib::Window window(100, 100, "Fluid Simulation");
@@ -199,36 +163,17 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 	sizeX = layoutImage.width;
 	sizeY = layoutImage.height;
 
-	dye.resize(sizeX);
-	dyeSource.resize(sizeX);
-	pressureGrid.resize(sizeX);
-	fluidField.resize(sizeX);
+	dye.resize(sizeX, sizeY, baseDye);
+	dyeSource.resize(sizeX, sizeY, baseDye);
+	pressureGrid.resize(sizeX, sizeY);
+	fluidField.resize(sizeX, sizeY, 1);
 	flowGrid.resize(sizeX, sizeY);
-	curlGrid.resize(sizeX);
-	for (int i = 0; i < sizeX; i++)
-	{
-		dye[i].resize(sizeY, baseDye);
-		dyeSource[i].resize(sizeY, baseDye);
-		pressureGrid[i].resize(sizeY);
-		fluidField[i].resize(sizeY, 1);
-		//flowGrid[i].resize(sizeY);
-		curlGrid[i].resize(sizeY);
-	}
+	curlGrid.resize(sizeX, sizeY);
 
 	flowX.resize(sizeX + 1, sizeY);
-	sourceX.resize(sizeX + 1);
-	for (int i = 0; i < sizeX + 1; i++)
-	{
-		//flowX[i].resize(sizeY);
-		sourceX[i].resize(sizeY);
-	}
-	flowY.resize(sizeX);
-	sourceY.resize(sizeX);
-	for (int i = 0; i < sizeX; i++)
-	{
-		flowY[i].resize(sizeY + 1);
-		sourceY[i].resize(sizeY + 1);
-	}
+	sourceX.resize(sizeX + 1, sizeY);
+	flowY.resize(sizeX, sizeY + 1);
+	sourceY.resize(sizeX, sizeY + 1);
 
 	SetTraceLogLevel(5);
 	raylib::Window window(100, 100, "Fluid Simulation");
@@ -271,8 +216,22 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 }
 
+fluid::~fluid()
+{
+	updateThread->join();
+	delete updateThread;
+}
+
 void fluid::draw()
 {
+	if (drawMode == 1)
+	{
+		drawGrid = pressureGrid;
+	}
+	if (drawMode == 2)
+	{
+		drawGrid = curlGrid;
+	}
 	BeginTextureMode(fluidRenderTexture);
 	ClearBackground(BLACK);
 	for (int x = 0; x < sizeX; x++)
@@ -296,16 +255,16 @@ void fluid::draw()
 			}
 			else if (drawMode == 1)
 			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(pressureGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(pressureGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.a = 255;
 			}
 			else if (drawMode == 2)
 			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(curlGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(curlGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.a = 255;
 			}
 			DrawPixel(x, y, cellColor);
@@ -351,11 +310,33 @@ void fluid::draw()
 	}
 }
 
+void fluid::mainLoop()
+{
+	bool exitWindow = 0;
+	isUpdating = 0;
+	while (!exitWindow)
+	{
+		frames++;
+		cout << "frame " << frames << ", at " << window.GetFPS() << " fps" << endl;
+		draw();
+		while (isUpdating)
+		{
+			WaitTime(.001);
+		}
+		if (frames > 1) updateThread->join();
+		updateThread = new thread(&fluid::update, this);
+		isUpdating = 1;
+
+		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
+		{
+			exitWindow = true;
+			std::cout << "Simulation closed by user" << std::endl;
+		}
+	}
+}
+
 void fluid::update()
 {
-	frames++;
-	cout << "frame " << frames << ", at " << window.GetFPS() << " fps" << endl;
-
 	// Vorticity Confinement Step
 	updateFlowGrid();
 	updateCurlGrid();
@@ -382,10 +363,14 @@ void fluid::update()
 
 	// Update Flow Grid for Rendering
 	updateFlowGrid();
+	updateCurlGrid();
+
+	isUpdating = 0;
 }
 
 void fluid::updateFlowSources()
 {
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 0; x < sizeX + 1; x++)
 	{
 		for (int y = 0; y < sizeY; y++)
@@ -396,6 +381,7 @@ void fluid::updateFlowSources()
 			}
 		}
 	}
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 0; x < sizeX; x++)
 	{
 		for (int y = 0; y < sizeY + 1; y++)
@@ -410,6 +396,7 @@ void fluid::updateFlowSources()
 
 void fluid::updateDyeSources()
 {
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 0; x < sizeX; x++)
 	{
 		for (int y = 0; y < sizeY; y++)
@@ -481,6 +468,7 @@ void fluid::solveIncompressibility()
 	for (int i = 0; i < relaxationSteps; i++)
 	{
 		updateFlowSources();
+#pragma omp parallel for num_threads(12) collapse(2)
 		for (int x = 1; x < sizeX - 1; x++)
 		{
 			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
@@ -489,20 +477,11 @@ void fluid::solveIncompressibility()
 				{
 					continue;
 				}
-				double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
-					(flowX[x][y] * fluidField[x - 1][y]) +
-					(flowY[x][y + 1] * fluidField[x][y + 1]) -
-					(flowY[x][y] * fluidField[x][y - 1]);
-				double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-				double correctionFactor = 1.9 * divergence / fluidCount;
-				flowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
-				flowX[x][y] += correctionFactor * fluidField[x - 1][y];
-				flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
-				flowY[x][y] += correctionFactor * fluidField[x][y - 1];
-				pressureGrid[x][y] -= divergence / (fluidCount * timeStep);
+				solveIncompressibilityAt(x, y);
 			}
 		}
 		updateFlowSources();
+#pragma omp parallel for num_threads(12) collapse(2)
 		for (int x = 1; x < sizeX - 1; x++)
 		{
 			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
@@ -511,26 +490,34 @@ void fluid::solveIncompressibility()
 				{
 					continue;
 				}
-				double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
-					(flowX[x][y] * fluidField[x - 1][y]) +
-					(flowY[x][y + 1] * fluidField[x][y + 1]) -
-					(flowY[x][y] * fluidField[x][y - 1]);
-				double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-				double correctionFactor = 1.9 * divergence / fluidCount;
-				flowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
-				flowX[x][y] += correctionFactor * fluidField[x - 1][y];
-				flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
-				flowY[x][y] += correctionFactor * fluidField[x][y - 1];
-				pressureGrid[x][y] -= divergence / (fluidCount * timeStep);
+				solveIncompressibilityAt(x, y);
 			}
 		}
 	}
 }
 
+bool fluid::solveIncompressibilityAt(int x, int y)
+{
+	double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
+		(flowX[x][y] * fluidField[x - 1][y]) +
+		(flowY[x][y + 1] * fluidField[x][y + 1]) -
+		(flowY[x][y] * fluidField[x][y - 1]);
+	double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+	double correctionFactor = 1.9 * divergence / fluidCount;
+	flowX[x + 1][y] -= correctionFactor * fluidField[x + 1][y];
+	flowX[x][y] += correctionFactor * fluidField[x - 1][y];
+	flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
+	flowY[x][y] += correctionFactor * fluidField[x][y - 1];
+	pressureGrid[x][y] -= divergence / (fluidCount * timeStep);
+
+	return 1;
+}
+
 void fluid::advectVelocity()
 {
 	Grid<double> newFlowX = flowX;
-	vector<vector<double>> newFlowY = flowY;
+	Grid<double> newFlowY = flowY;
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 1; x < sizeX; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -565,9 +552,10 @@ void fluid::advectVelocity()
 			newFlowX[x][y] = sourceFlow;
 		}
 	}
-	for (int x = 1; x < flowY.size() - 1; x++)
+#pragma omp parallel for num_threads(12) collapse(2)
+	for (int x = 1; x < sizeX - 1; x++)
 	{
-		for (int y = 1; y < flowY[x].size() - 1; y++)
+		for (int y = 1; y < sizeY; y++)
 		{
 			glm::dvec2 velocity = { (flowX[x][y] + flowX[x + 1][y] + flowX[x][y - 1] + flowX[x + 1][y - 1]) / 4.0,flowY[x][y] };
 			glm::dvec2 sourceFrac = glm::dvec2{ x,y } - velocity * timeStep;
@@ -577,9 +565,9 @@ void fluid::advectVelocity()
 				double ratio = (1 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
-			if (sourceFrac.x > flowY.size() - 2)
+			if (sourceFrac.x > sizeX - 2)
 			{
-				double ratio = (flowY.size() - 2 - x) / (sourceFrac.x - x);
+				double ratio = (sizeX - 2 - x) / (sourceFrac.x - x);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			if (sourceFrac.y < 1)
@@ -587,9 +575,9 @@ void fluid::advectVelocity()
 				double ratio = (1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
-			if (sourceFrac.y > flowY[x].size() - 2)
+			if (sourceFrac.y > sizeX - 1)
 			{
-				double ratio = (flowY[x].size() - 2 - y) / (sourceFrac.y - y);
+				double ratio = (sizeX - 1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			glm::ivec2 source = sourceFrac;
@@ -606,7 +594,8 @@ void fluid::advectVelocity()
 
 void fluid::advectDye()
 {
-	vector<vector<glm::dvec4>> newDye = dye;
+	Grid<glm::dvec4> newDye = dye;
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -655,6 +644,7 @@ void fluid::advectDye()
 
 void fluid::updateCurlGrid()
 {
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -670,7 +660,8 @@ void fluid::updateCurlGrid()
 void fluid::vorticityConfinement()
 {
 	Grid<double> newFlowX = flowX;
-	vector<vector<double>> newFlowY = flowY;
+	Grid<double> newFlowY = flowY;
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 3; x < sizeX - 3; x++)
 	{
 		for (int y = 3; y < sizeY - 3; y++)
