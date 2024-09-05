@@ -319,13 +319,16 @@ void fluid::mainLoop()
 		frames++;
 		cout << "frame " << frames << ", at " << window.GetFPS() << " fps" << endl;
 		draw();
-		while (isUpdating)
+		while (true)
 		{
-			WaitTime(.001);
+			if (!isUpdating)
+			{
+				if (frames > 1) updateThread->join();
+				updateThread = new thread(&fluid::update, this);
+				isUpdating = 1;
+				break;
+			}
 		}
-		if (frames > 1) updateThread->join();
-		updateThread = new thread(&fluid::update, this);
-		isUpdating = 1;
 
 		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
 		{
