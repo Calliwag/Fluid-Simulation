@@ -6,6 +6,7 @@
 # Generated files
 *frame*
 *.mp4
+[Vv]ideos/
 
 # User-specific files
 *.rsuser

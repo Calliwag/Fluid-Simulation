@@ -326,7 +326,7 @@ void fluid::mainLoop()
 				isMakingVideo = 1;
 				cv::Size frameSize(images[0].width, images[0].height);
 				int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
-				cv::VideoWriter outputVideo("output.mp4", codec, 60.0, frameSize);
+				cv::VideoWriter outputVideo("simulationOutput.mp4", codec, 60.0, frameSize);
 				for (int i = 0; i < images.size(); i++)
 				{
 					cout << "Writing frame " << i << " to video" << endl;
@@ -350,6 +350,7 @@ void fluid::mainLoop()
 				}
 				cout << "Saving video" << endl;
 				outputVideo.release();
+				system("ffmpeg -i simulationOutput.mp4 -vcodec libx264 -crf 18 -pix_fmt yuv420p simulationOutputCompressed.mp4");
 				videoCaptured = 1;
 				isMakingVideo = 0;
 			}
