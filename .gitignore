@@ -3,8 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-# Generated .png files
+# Generated files
 *frame*
+*.mp4
 
 # User-specific files
 *.rsuser
