@@ -1,5 +1,7 @@
 #include "Fluid.hpp"
 #include <omp.h>
+#include <chrono>
+#include "opencv2/opencv.hpp"
 
 using namespace std;
 
@@ -218,8 +220,7 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 
 fluid::~fluid()
 {
-	updateThread->join();
-	delete updateThread;
+
 }
 
 void fluid::draw()
@@ -298,43 +299,84 @@ void fluid::draw()
 	window.ClearBackground(BLACK);
 	DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * sizeX * renderScale,1.0f * sizeY * renderScale }, { 0,0 }, WHITE);
 	window.EndDrawing();
-	if (frames <= maxFrames)
-	{
-		std::string fileName = "frame" + std::to_string(frames) + ".png";
-		Image screenShot = LoadImageFromTexture(screenRenderTexture.texture);
-		ExportImage(screenShot, fileName.c_str());	// ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
-	}
-	if (frames == maxFrames)
-	{
-		system("ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4");
-	}
+}
+
+void fluid::storeScreenImage()
+{
+	images.push_back(LoadImageFromTexture(screenRenderTexture.texture)); // ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+	unsavedFrame = 0;
 }
 
 void fluid::mainLoop()
 {
 	bool exitWindow = 0;
-	isUpdating = 0;
+	jthread updateThread(&fluid::updateLoop, this);
 	while (!exitWindow)
 	{
-		frames++;
-		cout << "frame " << frames << ", at " << window.GetFPS() << " fps" << endl;
-		draw();
-		while (true)
+		while (drawnFrames != frames && frames <= maxFrames)
 		{
-			if (!isUpdating)
+			unsavedFrame = 1;
+			cout << "Frame " << drawnFrames << " saved" << endl;
+			storeScreenImage();
+			int width = images[0].width;
+			int height = images[0].height;
+			bool drawn = 0;
+			if (frames == maxFrames && !videoCaptured)
 			{
-				if (frames > 1) updateThread->join();
-				updateThread = new thread(&fluid::update, this);
-				isUpdating = 1;
-				break;
+				isMakingVideo = 1;
+				cv::Size frameSize(images[0].width, images[0].height);
+				cv::VideoWriter outputVideo("output.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 60.0, frameSize);
+				for (int i = 0; i < images.size(); i++)
+				{
+					cv::Mat inputMat(cv::Size(width, height), CV_8UC3);
+					Color* imageArr = LoadImageColors(images[i]);
+					for (int x = 0; x < width; x++)
+					{
+						for (int y = 0; y < height; y++)
+						{
+							inputMat.at<cv::Vec3b>(y, x) = { imageArr[y * width + x].b,imageArr[y * width + x].g,imageArr[y * width + x].r };
+						}
+					}
+					try
+					{
+						outputVideo.write(inputMat);
+					}
+					catch (cv::Exception& e)
+					{
+						cout << e.msg;
+					}
+				}
+				outputVideo.release();
+				videoCaptured = 1;
+				isMakingVideo = 0;
 			}
+			drawnFrames++;
 		}
-
+		draw();
 		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
 		{
 			exitWindow = true;
+			updateThreadShouldJoin = 1; 
+			updateThread.join();
 			std::cout << "Simulation closed by user" << std::endl;
 		}
+	}
+}
+
+void fluid::updateLoop()
+{
+	while (!updateThreadShouldJoin)
+	{
+		while (unsavedFrame || isMakingVideo)
+		{
+			WaitTime(0.001);
+		}
+		frames++;
+		auto t1 = std::chrono::high_resolution_clock::now();
+		update();
+		auto t2 = std::chrono::high_resolution_clock::now();
+		auto ms_int = duration_cast<std::chrono::milliseconds>(t2 - t1);
+		cout << "Frame " << frames << ", at " << int(1000.0 / ms_int.count()) << " fps" << endl;
 	}
 }
 
@@ -367,8 +409,6 @@ void fluid::update()
 	// Update Flow Grid for Rendering
 	updateFlowGrid();
 	updateCurlGrid();
-
-	isUpdating = 0;
 }
 
 void fluid::updateFlowSources()

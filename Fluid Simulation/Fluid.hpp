@@ -55,9 +55,14 @@ public:
 	RenderTexture2D linesRenderTexture;
 	RenderTexture2D screenRenderTexture;
 
+	std::vector<Image> images = {};
+	bool videoCaptured = 0;
+
 	// Threading for drawing
-	bool isUpdating = 0;
-	std::thread* updateThread = nullptr;
+	bool updateThreadShouldJoin = 0;
+	bool unsavedFrame = 0;
+	int drawnFrames = 0;
+	bool isMakingVideo = 0;
 
 	// Constructor
 	fluid(int _sizeX, int _sizeY);
@@ -73,7 +78,11 @@ public:
 	// Drawing
 	void draw();
 
+	void storeScreenImage();
+
 	// Simulation
+	void updateLoop();
+
 	void update();
 
 	void updateFlowSources();
