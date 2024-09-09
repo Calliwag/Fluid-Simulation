@@ -5,6 +5,7 @@
 
 using namespace std;
 
+// Basic constructor, unused for now
 fluid::fluid(int _sizeX, int _sizeY)
 {
 	raylib::Window window(100, 100, "Fluid Simulation");
@@ -38,6 +39,7 @@ fluid::fluid(int _sizeX, int _sizeY)
 	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 }
 
+// Constructor with only layout image
 fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames)
 {
 	renderScale = _renderScale;
@@ -117,8 +119,11 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
 	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
+
+	images.reserve(maxFrames);
 }
 
+// Constructor with layout image and dye source image
 fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames)
 {
 	renderScale = _renderScale;
@@ -216,20 +221,24 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
 	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
+
+	images.reserve(maxFrames);
 }
 
+// Destructor, unused
 fluid::~fluid()
 {
 
 }
 
+// Main draw function
 void fluid::draw()
 {
 	if (drawMode == 1)
 	{
 		drawGrid = pressureGrid;
 	}
-	if (drawMode == 2)
+	else if (drawMode == 2)
 	{
 		drawGrid = curlGrid;
 	}
@@ -301,9 +310,10 @@ void fluid::draw()
 	window.EndDrawing();
 }
 
+// Saves image to a vector of images
 void fluid::storeScreenImage()
 {
-	images.push_back(LoadImageFromTexture(screenRenderTexture.texture)); // ffmpeg -framerate 60 -i frame%d.png -vcodec libx264 -crf 18 -pix_fmt yuv420p output.mp4
+	images.push_back(LoadImageFromTexture(screenRenderTexture.texture));
 	unsavedFrame = 0;
 }
 
@@ -505,6 +515,7 @@ void fluid::diffuseDye()
 
 void fluid::solveIncompressibility()
 {
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 0; x < sizeX; x++)
 	{
 		for (int y = 0; y < sizeY; y++)
@@ -520,11 +531,10 @@ void fluid::solveIncompressibility()
 		{
 			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
 			{
-				if (fluidField[x][y] == 0)
+				if (fluidField[x][y] == 1)
 				{
-					continue;
+					solveIncompressibilityAt(x, y);
 				}
-				solveIncompressibilityAt(x, y);
 			}
 		}
 		updateFlowSources();
@@ -533,11 +543,10 @@ void fluid::solveIncompressibility()
 		{
 			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
 			{
-				if (fluidField[x][y] == 0)
+				if (fluidField[x][y] == 1)
 				{
-					continue;
+					solveIncompressibilityAt(x, y);
 				}
-				solveIncompressibilityAt(x, y);
 			}
 		}
 	}
