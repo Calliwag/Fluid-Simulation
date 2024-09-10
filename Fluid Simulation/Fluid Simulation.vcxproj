@@ -199,11 +199,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FluidRender.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Fluid.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid.hpp" />
+    <ClInclude Include="FluidRender.hpp" />
     <ClInclude Include="Grid.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

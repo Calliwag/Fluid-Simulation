@@ -6,7 +6,7 @@
 using namespace std;
 
 // Basic constructor, unused for now
-fluid::fluid(int _sizeX, int _sizeY)
+Fluid::Fluid(int _sizeX, int _sizeY)
 {
 	raylib::Window window(100, 100, "Fluid Simulation");
 	sizeX = _sizeX;
@@ -40,7 +40,7 @@ fluid::fluid(int _sizeX, int _sizeY)
 }
 
 // Constructor with only layout image
-fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames)
+Fluid::Fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames)
 {
 	renderScale = _renderScale;
 	drawMode = _drawMode;
@@ -82,10 +82,10 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 	flowY.resize(sizeX, sizeY + 1);
 	sourceY.resize(sizeX, sizeY + 1);
 
-	SetTraceLogLevel(5);
+	/*SetTraceLogLevel(5);
 	raylib::Window window(100, 100, "Fluid Simulation");
 	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
-	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);*/
 
 	for (int x = 0; x < sizeX; x++)
 	{
@@ -124,7 +124,7 @@ fluid::fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 }
 
 // Constructor with layout image and dye source image
-fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames)
+Fluid::Fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames)
 {
 	renderScale = _renderScale;
 	drawMode = _drawMode;
@@ -182,10 +182,10 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 	flowY.resize(sizeX, sizeY + 1);
 	sourceY.resize(sizeX, sizeY + 1);
 
-	SetTraceLogLevel(5);
-	raylib::Window window(100, 100, "Fluid Simulation");
-	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
-	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);
+	//SetTraceLogLevel(5);
+	//raylib::Window window(100, 100, "Fluid Simulation");
+	//SetWindowSize(sizeX * renderScale, sizeY * renderScale);
+	//SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);
 
 	for (int x = 0; x < sizeX; x++)
 	{
@@ -226,13 +226,13 @@ fluid::fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 }
 
 // Destructor, unused
-fluid::~fluid()
+Fluid::~Fluid()
 {
 
 }
 
 // Main draw function
-void fluid::draw()
+void Fluid::draw()
 {
 	if (drawMode == 1)
 	{
@@ -304,23 +304,23 @@ void fluid::draw()
 	DrawTexture(linesRenderTexture.texture, 0, 0, WHITE);
 	EndTextureMode();
 
-	window.BeginDrawing();
-	window.ClearBackground(BLACK);
-	DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * sizeX * renderScale,1.0f * sizeY * renderScale }, { 0,0 }, WHITE);
-	window.EndDrawing();
+	//window.BeginDrawing();
+	//window.ClearBackground(BLACK);
+	//DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * sizeX * renderScale,1.0f * sizeY * renderScale }, { 0,0 }, WHITE);
+	//window.EndDrawing();
 }
 
 // Saves image to a vector of images
-void fluid::storeScreenImage()
+void Fluid::storeScreenImage()
 {
 	images.push_back(LoadImageFromTexture(screenRenderTexture.texture));
 	unsavedFrame = 0;
 }
 
-void fluid::mainLoop()
+void Fluid::mainLoop()
 {
 	bool exitWindow = 0;
-	jthread updateThread(&fluid::updateLoop, this);
+	jthread updateThread(&Fluid::updateLoop, this);
 	while (!exitWindow)
 	{
 		while (drawnFrames != frames && frames <= maxFrames)
@@ -377,7 +377,7 @@ void fluid::mainLoop()
 	}
 }
 
-void fluid::updateLoop()
+void Fluid::updateLoop()
 {
 	while (!updateThreadShouldJoin)
 	{
@@ -394,7 +394,7 @@ void fluid::updateLoop()
 	}
 }
 
-void fluid::update()
+void Fluid::update()
 {
 	// Vorticity Confinement Step
 	updateFlowGrid();
@@ -425,7 +425,7 @@ void fluid::update()
 	updateCurlGrid();
 }
 
-void fluid::updateFlowSources()
+void Fluid::updateFlowSources()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 0; x < sizeX + 1; x++)
@@ -451,7 +451,7 @@ void fluid::updateFlowSources()
 	}
 }
 
-void fluid::updateDyeSources()
+void Fluid::updateDyeSources()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 0; x < sizeX; x++)
@@ -466,7 +466,7 @@ void fluid::updateDyeSources()
 	}
 }
 
-void fluid::updateFlowGrid()
+void Fluid::updateFlowGrid()
 {
 	for (int x = 1; x < sizeX - 1; x++)
 	{
@@ -478,7 +478,7 @@ void fluid::updateFlowGrid()
 	}
 }
 
-void fluid::decayDye()
+void Fluid::decayDye()
 {
 	for (int x = 1; x < sizeX - 1; x++)
 	{
@@ -492,7 +492,7 @@ void fluid::decayDye()
 	}
 }
 
-void fluid::diffuseDye()
+void Fluid::diffuseDye()
 {
 	for (int x = 1; x < sizeX - 1; x++)
 	{
@@ -513,7 +513,7 @@ void fluid::diffuseDye()
 	}
 }
 
-void fluid::solveIncompressibility()
+void Fluid::solveIncompressibility()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 0; x < sizeX; x++)
@@ -552,7 +552,7 @@ void fluid::solveIncompressibility()
 	}
 }
 
-bool fluid::solveIncompressibilityAt(int x, int y)
+bool Fluid::solveIncompressibilityAt(int x, int y)
 {
 	double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
 		(flowX[x][y] * fluidField[x - 1][y]) +
@@ -569,7 +569,7 @@ bool fluid::solveIncompressibilityAt(int x, int y)
 	return 1;
 }
 
-void fluid::advectVelocity()
+void Fluid::advectVelocity()
 {
 	Grid<double> newFlowX = flowX;
 	Grid<double> newFlowY = flowY;
@@ -648,7 +648,7 @@ void fluid::advectVelocity()
 	flowY = newFlowY;
 }
 
-void fluid::advectDye()
+void Fluid::advectDye()
 {
 	Grid<glm::dvec4> newDye = dye;
 #pragma omp parallel for num_threads(12) collapse(2)
@@ -698,7 +698,7 @@ void fluid::advectDye()
 	dye = newDye;
 }
 
-void fluid::updateCurlGrid()
+void Fluid::updateCurlGrid()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 1; x < sizeX - 1; x++)
@@ -713,7 +713,7 @@ void fluid::updateCurlGrid()
 	}
 }
 
-void fluid::vorticityConfinement()
+void Fluid::vorticityConfinement()
 {
 	Grid<double> newFlowX = flowX;
 	Grid<double> newFlowY = flowY;

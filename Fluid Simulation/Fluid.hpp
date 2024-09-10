@@ -5,9 +5,8 @@
 #include "raylib-cpp.hpp"
 #include "Grid.hpp"
 #include <thread>
-#include <future>
 
-class fluid
+class Fluid
 {
 public:
 
@@ -41,7 +40,7 @@ public:
 	int relaxationSteps = 50;
 
 	// Rendering
-	raylib::Window window;
+	//raylib::Window window;
 	int renderScale;
 	int drawMode; // 0 = dye, 1 = pressure, 2 = curl
 	glm::dvec2 drawMinMax;
@@ -65,12 +64,12 @@ public:
 	bool isMakingVideo = 0;
 
 	// Constructor
-	fluid(int _sizeX, int _sizeY);
-	fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames);
-	fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames);
+	Fluid(int _sizeX, int _sizeY);
+	Fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames);
+	Fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames);
 
 	// Destructor
-	~fluid();
+	~Fluid();
 
 	// Main Loop
 	void mainLoop();

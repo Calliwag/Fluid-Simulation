@@ -1,7 +1,8 @@
 #include "Fluid.hpp"
+#include "FluidRender.hpp"
 #include <argparse/argparse.hpp>
 
-std::shared_ptr<fluid> newFluid;
+std::shared_ptr<Fluid> fluid;
 
 int main(int argc, char* argv[])
 {
@@ -60,7 +61,7 @@ int main(int argc, char* argv[])
 	if (program.is_used("--DyeSourceImage"))
 	{
 		Image dyeInputImage = LoadImage(program.get<>("--DyeSourceImage").c_str());
-		newFluid = std::make_shared<fluid>(inputImage,
+		fluid = std::make_shared<Fluid>(inputImage,
 			dyeInputImage,
 			program.get<int>("--RenderScale"),
 			program.get<int>("--DrawMode"),
@@ -71,7 +72,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		newFluid = std::make_shared<fluid>(inputImage,
+		fluid = std::make_shared<Fluid>(inputImage,
 			program.get<int>("--RenderScale"),
 			program.get<int>("--DrawMode"),
 			glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
@@ -80,11 +81,19 @@ int main(int argc, char* argv[])
 			glm::dvec4{ 1,0,0,1 },
 			program.get<int>("--MaxFrames"));
 	}
+	FluidRender fluidRender(fluid, 
+		glm::dvec4{0,0,0,1}, glm::dvec4{1,1,1,1}, 
+		program.get<int>("--RenderScale"), 
+		program.get<int>("--MaxFrames"), 
+		program.get<int>("--DrawMode"), 
+		glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
+		program.get<std::vector<int>>("--DrawLines")[0],
+		program.get<std::vector<int>>("--DrawLines")[1]);
 
 	bool exitWindow = 0;
 	while (!exitWindow)
 	{
-		newFluid->mainLoop();
+		fluidRender.mainLoop();
 		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
 		{
 			exitWindow = true;
