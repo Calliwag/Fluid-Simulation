@@ -39,34 +39,15 @@ public:
 	double vorticity = 0.0;
 	int relaxationSteps = 50;
 
-	// Rendering
-	//raylib::Window window;
-	int renderScale;
-	int drawMode; // 0 = dye, 1 = pressure, 2 = curl
-	glm::dvec2 drawMinMax;
-	bool drawLines;
-	int lineSize;
-	int maxFrames;
-
-	Grid<double> drawGrid;
-
-	RenderTexture2D fluidRenderTexture;
-	RenderTexture2D linesRenderTexture;
-	RenderTexture2D screenRenderTexture;
-
-	std::vector<Image> images = {};
-	bool videoCaptured = 0;
-
 	// Threading for drawing
 	bool updateThreadShouldJoin = 0;
 	bool unsavedFrame = 0;
-	int drawnFrames = 0;
 	bool isMakingVideo = 0;
 
 	// Constructor
 	Fluid(int _sizeX, int _sizeY);
-	Fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames);
-	Fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames);
+	Fluid(Image layoutImage, glm::dvec4 dyeColor);
+	Fluid(Image layoutImage, Image dyeImage);
 
 	// Destructor
 	~Fluid();

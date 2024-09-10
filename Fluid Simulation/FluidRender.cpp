@@ -115,7 +115,7 @@ void FluidRender::storeScreenImage()
 void FluidRender::mainLoop()
 {
 	bool exitWindow = 0;
-	std::jthread updateThread(&Fluid::updateLoop, *fluid);
+	std::jthread updateThread(&Fluid::updateLoop, fluid);
 	while (!exitWindow)
 	{
 		while (drawnFrames != fluid->frames && drawnFrames <= maxFrames)

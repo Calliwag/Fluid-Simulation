@@ -61,25 +61,11 @@ int main(int argc, char* argv[])
 	if (program.is_used("--DyeSourceImage"))
 	{
 		Image dyeInputImage = LoadImage(program.get<>("--DyeSourceImage").c_str());
-		fluid = std::make_shared<Fluid>(inputImage,
-			dyeInputImage,
-			program.get<int>("--RenderScale"),
-			program.get<int>("--DrawMode"),
-			glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
-			program.get<std::vector<int>>("--DrawLines")[0],
-			program.get<std::vector<int>>("--DrawLines")[1],
-			program.get<int>("--MaxFrames"));
+		fluid = std::make_shared<Fluid>(inputImage,dyeInputImage);
 	}
 	else
 	{
-		fluid = std::make_shared<Fluid>(inputImage,
-			program.get<int>("--RenderScale"),
-			program.get<int>("--DrawMode"),
-			glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },
-			program.get<std::vector<int>>("--DrawLines")[0],
-			program.get<std::vector<int>>("--DrawLines")[1],
-			glm::dvec4{ 1,0,0,1 },
-			program.get<int>("--MaxFrames"));
+		fluid = std::make_shared<Fluid>(inputImage,glm::dvec4{ 1,0,0,1 });
 	}
 	FluidRender fluidRender(fluid, 
 		glm::dvec4{0,0,0,1}, glm::dvec4{1,1,1,1}, 

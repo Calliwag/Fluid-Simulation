@@ -8,7 +8,6 @@ using namespace std;
 // Basic constructor, unused for now
 Fluid::Fluid(int _sizeX, int _sizeY)
 {
-	raylib::Window window(100, 100, "Fluid Simulation");
 	sizeX = _sizeX;
 	sizeY = _sizeY;
 
@@ -32,22 +31,11 @@ Fluid::Fluid(int _sizeX, int _sizeY)
 	sourceX.resize(sizeX + 1, sizeY);
 	flowY.resize(sizeX, sizeY + 1);
 	sourceY.resize(sizeX, sizeY + 1);
-
-	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
-	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
-	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
-	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
 }
 
 // Constructor with only layout image
-Fluid::Fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, glm::dvec4 dyeColor, int _maxFrames)
+Fluid::Fluid(Image layoutImage, glm::dvec4 dyeColor)
 {
-	renderScale = _renderScale;
-	drawMode = _drawMode;
-	drawMinMax = _drawMinMax;
-	drawLines = _drawLines;
-	lineSize = _lineSize;
-	maxFrames = _maxFrames;
 	Color* layoutImageColorsArr = LoadImageColors(layoutImage);
 	vector<vector<glm::ivec4>>  layoutImageColors = {};
 	layoutImageColors.resize(layoutImage.width);
@@ -82,11 +70,6 @@ Fluid::Fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 	flowY.resize(sizeX, sizeY + 1);
 	sourceY.resize(sizeX, sizeY + 1);
 
-	/*SetTraceLogLevel(5);
-	raylib::Window window(100, 100, "Fluid Simulation");
-	SetWindowSize(sizeX * renderScale, sizeY * renderScale);
-	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);*/
-
 	for (int x = 0; x < sizeX; x++)
 	{
 		for (int y = 0; y < sizeY; y++)
@@ -115,24 +98,11 @@ Fluid::Fluid(Image layoutImage, int _renderScale, int _drawMode, glm::dvec2 _dra
 			}
 		}
 	}
-
-	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
-	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
-	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
-
-	images.reserve(maxFrames);
 }
 
 // Constructor with layout image and dye source image
-Fluid::Fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode, glm::dvec2 _drawMinMax, bool _drawLines, int _lineSize, int _maxFrames)
+Fluid::Fluid(Image layoutImage, Image dyeImage)
 {
-	renderScale = _renderScale;
-	drawMode = _drawMode;
-	drawMinMax = _drawMinMax;
-	drawLines = _drawLines;
-	lineSize = _lineSize;
-	maxFrames = _maxFrames;
-
 	if (!(layoutImage.width == dyeImage.width && layoutImage.height == dyeImage.height))
 	{
 		cout << "Layout image must have same dimensions as dye image." << endl;
@@ -182,11 +152,6 @@ Fluid::Fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 	flowY.resize(sizeX, sizeY + 1);
 	sourceY.resize(sizeX, sizeY + 1);
 
-	//SetTraceLogLevel(5);
-	//raylib::Window window(100, 100, "Fluid Simulation");
-	//SetWindowSize(sizeX * renderScale, sizeY * renderScale);
-	//SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - sizeY * renderScale / 2);
-
 	for (int x = 0; x < sizeX; x++)
 	{
 		for (int y = 0; y < sizeY; y++)
@@ -206,10 +171,8 @@ Fluid::Fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 			{
 				sourceX[x][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
 				sourceX[x + 1][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
-				//sourceY[x][y] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
-				//sourceY[x][y + 1] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
-				sourceY[x][y] = 0;
-				sourceY[x][y + 1] = 0;
+				sourceY[x][y] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
+				sourceY[x][y + 1] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
 			}
 			if (dyeImageColors[x][y].a != 0)
 			{
@@ -217,164 +180,12 @@ Fluid::Fluid(Image layoutImage, Image dyeImage, int _renderScale, int _drawMode,
 			}
 		}
 	}
-
-	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
-	linesRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
-	screenRenderTexture = LoadRenderTexture(sizeX * renderScale, sizeY * renderScale);
-
-	images.reserve(maxFrames);
 }
 
 // Destructor, unused
 Fluid::~Fluid()
 {
 
-}
-
-// Main draw function
-void Fluid::draw()
-{
-	if (drawMode == 1)
-	{
-		drawGrid = pressureGrid;
-	}
-	else if (drawMode == 2)
-	{
-		drawGrid = curlGrid;
-	}
-	BeginTextureMode(fluidRenderTexture);
-	ClearBackground(BLACK);
-	for (int x = 0; x < sizeX; x++)
-	{
-		for (int y = 0; y < sizeY; y++)
-		{
-			Color cellColor = YELLOW;
-			if(fluidField[x][y] == 0)
-			{
-				cellColor.r = barrierColor.x * 255;
-				cellColor.g = barrierColor.y * 255;
-				cellColor.b = barrierColor.z * 255;
-				cellColor.a = barrierColor.w * 255;
-			}
-			else if (drawMode == 0)
-			{
-				cellColor.r = dye[x][y].x * 255;
-				cellColor.g = dye[x][y].y * 255;
-				cellColor.b = dye[x][y].z * 255;
-				cellColor.a = dye[x][y].w * 255;
-			}
-			else if (drawMode == 1)
-			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
-				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
-				cellColor.a = 255;
-			}
-			else if (drawMode == 2)
-			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
-				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
-				cellColor.a = 255;
-			}
-			DrawPixel(x, y, cellColor);
-		}
-	}
-	EndTextureMode();
-
-	BeginTextureMode(linesRenderTexture);
-	ClearBackground(BLANK);
-	if (drawLines)
-	{
-		for (int x = 1; x < sizeX - 1; x += lineSize)
-		{
-			for (int y = 1; y < sizeY - 1; y += lineSize)
-			{
-				glm::dvec2 velocity = flowGrid[x][y];
-				DrawLine(x * renderScale + renderScale / 2.0, y * renderScale + renderScale / 2.0, (x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, WHITE);
-				DrawCircle((x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, 2, WHITE);
-			}
-		}
-	}
-	EndTextureMode();
-
-	BeginTextureMode(screenRenderTexture);
-	ClearBackground(BLACK);
-	DrawTextureEx(fluidRenderTexture.texture, { 0,0 }, 0, renderScale, WHITE);
-	DrawTexture(linesRenderTexture.texture, 0, 0, WHITE);
-	EndTextureMode();
-
-	//window.BeginDrawing();
-	//window.ClearBackground(BLACK);
-	//DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * sizeX * renderScale,1.0f * sizeY * renderScale }, { 0,0 }, WHITE);
-	//window.EndDrawing();
-}
-
-// Saves image to a vector of images
-void Fluid::storeScreenImage()
-{
-	images.push_back(LoadImageFromTexture(screenRenderTexture.texture));
-	unsavedFrame = 0;
-}
-
-void Fluid::mainLoop()
-{
-	bool exitWindow = 0;
-	jthread updateThread(&Fluid::updateLoop, this);
-	while (!exitWindow)
-	{
-		while (drawnFrames != frames && frames <= maxFrames)
-		{
-			unsavedFrame = 1;
-			cout << "Frame " << drawnFrames << " saved" << endl;
-			storeScreenImage();
-			int width = images[0].width;
-			int height = images[0].height;
-			bool drawn = 0;
-			if (frames == maxFrames && !videoCaptured)
-			{
-				isMakingVideo = 1;
-				cv::Size frameSize(images[0].width, images[0].height);
-				int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
-				cv::VideoWriter outputVideo("simulationOutput.mp4", codec, 60.0, frameSize);
-				for (int i = 0; i < images.size(); i++)
-				{
-					cout << "Writing frame " << i << " to video" << endl;
-					cv::Mat inputMat(cv::Size(width, height), CV_8UC3);
-					Color* imageArr = LoadImageColors(images[i]);
-					for (int x = 0; x < width; x++)
-					{
-						for (int y = 0; y < height; y++)
-						{
-							inputMat.at<cv::Vec3b>(y, x) = { imageArr[y * width + x].b,imageArr[y * width + x].g,imageArr[y * width + x].r };
-						}
-					}
-					try
-					{
-						outputVideo.write(inputMat);
-					}
-					catch (cv::Exception& e)
-					{
-						cout << e.msg;
-					}
-				}
-				cout << "Saving video" << endl;
-				outputVideo.release();
-				system("ffmpeg -i simulationOutput.mp4 -vcodec libx264 -crf 18 -pix_fmt yuv420p simulationOutputCompressed.mp4");
-				videoCaptured = 1;
-				isMakingVideo = 0;
-			}
-			drawnFrames++;
-		}
-		draw();
-		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
-		{
-			exitWindow = true;
-			updateThreadShouldJoin = 1; 
-			updateThread.join();
-			std::cout << "Simulation closed by user" << std::endl;
-		}
-	}
 }
 
 void Fluid::updateLoop()
@@ -406,19 +217,15 @@ void Fluid::update()
 
 	// Advection Step
 	advectVelocity();
-	if (drawMode == 0)
-	{
-		updateFlowGrid();
-		updateDyeSources();
-		advectDye();
-	}
+	// Should only be for drawMode = 0
+	updateFlowGrid();
+	updateDyeSources();
+	advectDye();
 
 	// Dye Decay and Diffuse Step
-	if (drawMode == 0)
-	{
-		decayDye();
-		diffuseDye();
-	}
+	// Should only be for drawMode = 0
+	decayDye();
+	diffuseDye();
 
 	// Update Flow Grid for Rendering
 	updateFlowGrid();
