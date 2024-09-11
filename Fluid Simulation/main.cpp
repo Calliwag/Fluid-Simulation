@@ -57,6 +57,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	// Construct fluid(shared_ptr)
 	Image inputImage = LoadImage(program.get<>("SourceImage").c_str());
 	if (program.is_used("--DyeSourceImage"))
 	{
@@ -67,6 +68,8 @@ int main(int argc, char* argv[])
 	{
 		fluid = std::make_shared<Fluid>(inputImage,glm::dvec4{ 1,0,0,1 });
 	}
+
+	//Construct fluidRender
 	FluidRender fluidRender(fluid, 
 		glm::dvec4{0,0,0,1}, glm::dvec4{1,1,1,1}, 
 		program.get<int>("--RenderScale"), 
@@ -76,16 +79,9 @@ int main(int argc, char* argv[])
 		program.get<std::vector<int>>("--DrawLines")[0],
 		program.get<std::vector<int>>("--DrawLines")[1]);
 
-	bool exitWindow = 0;
-	while (!exitWindow)
-	{
-		fluidRender.mainLoop();
-		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
-		{
-			exitWindow = true;
-			std::cout << "Simulation closed by user" << std::endl;
-		}
-	}
+	// Main loop of fluid simulation
+	fluidRender.mainLoop();
+
 	CloseWindow();
 	return 0;
 }

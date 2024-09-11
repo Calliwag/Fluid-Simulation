@@ -26,9 +26,16 @@ FluidRender::FluidRender(std::shared_ptr<Fluid> _fluid, glm::dvec4 _baseDye, glm
 	screenRenderTexture = LoadRenderTexture(fluid->sizeX * renderScale, fluid->sizeY * renderScale);
 }
 
-// Main draw function
-void FluidRender::draw()
+void FluidRender::getGrids()
 {
+	if (drawLines)
+	{
+		flowGrid = fluid->flowGrid;
+	}
+	if (drawMode == 0)
+	{
+		dyeGrid = fluid->dye;
+	}
 	if (drawMode == 1)
 	{
 		drawGrid = fluid->pressureGrid;
@@ -37,6 +44,11 @@ void FluidRender::draw()
 	{
 		drawGrid = fluid->curlGrid;
 	}
+}
+
+// Main draw function
+void FluidRender::draw()
+{
 	BeginTextureMode(fluidRenderTexture);
 	ClearBackground(BLACK);
 	for (int x = 0; x < fluid->sizeX; x++)
@@ -53,10 +65,10 @@ void FluidRender::draw()
 			}
 			else if (drawMode == 0)
 			{
-				cellColor.r = fluid->dye[x][y].x * 255;
-				cellColor.g = fluid->dye[x][y].y * 255;
-				cellColor.b = fluid->dye[x][y].z * 255;
-				cellColor.a = fluid->dye[x][y].w * 255;
+				cellColor.r = dyeGrid[x][y].x * 255;
+				cellColor.g = dyeGrid[x][y].y * 255;
+				cellColor.b = dyeGrid[x][y].z * 255;
+				cellColor.a = dyeGrid[x][y].w * 255;
 			}
 			else if (drawMode == 1)
 			{
@@ -85,7 +97,7 @@ void FluidRender::draw()
 		{
 			for (int y = 1; y < fluid->sizeY - 1; y += lineSize)
 			{
-				glm::dvec2 velocity = fluid->flowGrid[x][y];
+				glm::dvec2 velocity = flowGrid[x][y];
 				DrawLine(x * renderScale + renderScale / 2.0, y * renderScale + renderScale / 2.0, (x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, WHITE);
 				DrawCircle((x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, 2, WHITE);
 			}
@@ -109,59 +121,61 @@ void FluidRender::draw()
 void FluidRender::storeScreenImage()
 {
 	images.push_back(LoadImageFromTexture(screenRenderTexture.texture));
-	fluid->unsavedFrame = 0;
 }
 
+void FluidRender::saveVideo()
+{
+	int width = images[0].width;
+	int height = images[0].height;
+	cv::Size frameSize(images[0].width, images[0].height);
+	int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
+	cv::VideoWriter outputVideo("simulationOutput.mp4", codec, 60.0, frameSize);
+	for (int i = 0; i < images.size(); i++)
+	{
+		std::cout << "Writing frame " << i << " to video\n";
+		cv::Mat inputMat(cv::Size(width, height), CV_8UC3);
+		Color* imageArr = LoadImageColors(images[i]);
+		for (int x = 0; x < width; x++)
+		{
+			for (int y = 0; y < height; y++)
+			{
+				inputMat.at<cv::Vec3b>(y, x) = { imageArr[y * width + x].b,imageArr[y * width + x].g,imageArr[y * width + x].r };
+			}
+		}
+		try
+		{
+			outputVideo.write(inputMat);
+		}
+		catch (cv::Exception& e)
+		{
+			std::cout << e.msg << std::endl;
+		}
+	}
+	std::cout << "Saving video" << std::endl;
+	outputVideo.release();
+	system("ffmpeg -i simulationOutput.mp4 -vcodec libx264 -crf 18 -pix_fmt yuv420p simulationOutputCompressed.mp4");
+	videoCaptured = 1;
+}
+
+// Main loop
 void FluidRender::mainLoop()
 {
 	bool exitWindow = 0;
 	std::jthread updateThread(&Fluid::updateLoop, fluid);
 	while (!exitWindow)
 	{
+		fluid->m.lock();
 		while (drawnFrames != fluid->frames && drawnFrames <= maxFrames)
 		{
-			fluid->unsavedFrame = 1;
-			std::cout << "Frame " << drawnFrames << " saved" << std::endl;
-			storeScreenImage();
-			int width = images[0].width;
-			int height = images[0].height;
-			bool drawn = 0;
-			if (drawnFrames == maxFrames && !videoCaptured)
-			{
-				fluid->isMakingVideo = 1;
-				cv::Size frameSize(images[0].width, images[0].height);
-				int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
-				cv::VideoWriter outputVideo("simulationOutput.mp4", codec, 60.0, frameSize);
-				for (int i = 0; i < images.size(); i++)
-				{
-					std::cout << "Writing frame " << i << " to video" << std::endl;
-					cv::Mat inputMat(cv::Size(width, height), CV_8UC3);
-					Color* imageArr = LoadImageColors(images[i]);
-					for (int x = 0; x < width; x++)
-					{
-						for (int y = 0; y < height; y++)
-						{
-							inputMat.at<cv::Vec3b>(y, x) = { imageArr[y * width + x].b,imageArr[y * width + x].g,imageArr[y * width + x].r };
-						}
-					}
-					try
-					{
-						outputVideo.write(inputMat);
-					}
-					catch (cv::Exception& e)
-					{
-						std::cout << e.msg << std::endl;
-					}
-				}
-				std::cout << "Saving video" << std::endl;
-				outputVideo.release();
-				system("ffmpeg -i simulationOutput.mp4 -vcodec libx264 -crf 18 -pix_fmt yuv420p simulationOutputCompressed.mp4");
-				videoCaptured = 1;
-				fluid->isMakingVideo = 0;
-			}
 			drawnFrames++;
+			std::cout << "Frame " << drawnFrames << " saved\n";
+			storeScreenImage();
+			if (drawnFrames == maxFrames && !videoCaptured) saveVideo();
 		}
+		getGrids();
+		fluid->m.unlock();
 		draw();
+
 		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
 		{
 			exitWindow = true;

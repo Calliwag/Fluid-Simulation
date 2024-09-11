@@ -5,11 +5,11 @@
 #include "raylib-cpp.hpp"
 #include "Grid.hpp"
 #include <thread>
+#include <mutex>
 
 class Fluid
 {
 public:
-
 	// Simulation Grids
 	Grid<double> flowX = {};
 	Grid<double> sourceX = {};
@@ -41,8 +41,7 @@ public:
 
 	// Threading for drawing
 	bool updateThreadShouldJoin = 0;
-	bool unsavedFrame = 0;
-	bool isMakingVideo = 0;
+	std::mutex m;
 
 	// Constructor
 	Fluid(int _sizeX, int _sizeY);

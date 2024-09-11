@@ -1,6 +1,7 @@
 #pragma once
 #include "Fluid.hpp"
 #include <thread>
+#include <mutex>
 
 class FluidRender
 {
@@ -21,6 +22,8 @@ private:
 	int maxFrames;
 
 	Grid<double> drawGrid;
+	Grid<glm::dvec2> flowGrid;
+	Grid<glm::dvec4> dyeGrid;
 
 	RenderTexture2D fluidRenderTexture;
 	RenderTexture2D linesRenderTexture;
@@ -39,7 +42,9 @@ public:
 	void mainLoop();
 
 	// Drawing
+	void getGrids();
 	void draw();
 	void storeScreenImage();
+	void saveVideo();
 
 };

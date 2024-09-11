@@ -192,16 +192,14 @@ void Fluid::updateLoop()
 {
 	while (!updateThreadShouldJoin)
 	{
-		while (unsavedFrame || isMakingVideo)
-		{
-			WaitTime(0.001);
-		}
+		m.lock();
 		frames++;
 		auto t1 = std::chrono::high_resolution_clock::now();
 		update();
+		m.unlock();
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto ms_int = duration_cast<std::chrono::milliseconds>(t2 - t1);
-		cout << "Frame " << frames << ", at " << int(1000.0 / ms_int.count()) << " fps" << endl;
+		cout << "Frame " << frames << ", at " << int(1000.0 / ms_int.count()) << " fps\n";
 	}
 }
 
@@ -232,6 +230,7 @@ void Fluid::update()
 	updateCurlGrid();
 }
 
+// Updating all sources of velocity
 void Fluid::updateFlowSources()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
@@ -258,6 +257,7 @@ void Fluid::updateFlowSources()
 	}
 }
 
+// Updating all sources of dye
 void Fluid::updateDyeSources()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
@@ -273,6 +273,7 @@ void Fluid::updateDyeSources()
 	}
 }
 
+// Updating flow at center of grid cells
 void Fluid::updateFlowGrid()
 {
 	for (int x = 1; x < sizeX - 1; x++)
@@ -285,6 +286,7 @@ void Fluid::updateFlowGrid()
 	}
 }
 
+// Decaying dye with 'decayValue'
 void Fluid::decayDye()
 {
 	for (int x = 1; x < sizeX - 1; x++)
@@ -299,6 +301,7 @@ void Fluid::decayDye()
 	}
 }
 
+// Diffusing dye with 'diffuseValue'
 void Fluid::diffuseDye()
 {
 	for (int x = 1; x < sizeX - 1; x++)
@@ -320,6 +323,7 @@ void Fluid::diffuseDye()
 	}
 }
 
+// Solve incompressibility of the fluid
 void Fluid::solveIncompressibility()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
@@ -359,6 +363,7 @@ void Fluid::solveIncompressibility()
 	}
 }
 
+// Solve incompressibility at a specific grid cell
 bool Fluid::solveIncompressibilityAt(int x, int y)
 {
 	double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
@@ -376,6 +381,7 @@ bool Fluid::solveIncompressibilityAt(int x, int y)
 	return 1;
 }
 
+// Advecting(moving) velocity
 void Fluid::advectVelocity()
 {
 	Grid<double> newFlowX = flowX;
@@ -455,6 +461,7 @@ void Fluid::advectVelocity()
 	flowY = newFlowY;
 }
 
+// Advecting(moving) dye
 void Fluid::advectDye()
 {
 	Grid<glm::dvec4> newDye = dye;
@@ -505,6 +512,7 @@ void Fluid::advectDye()
 	dye = newDye;
 }
 
+// Updating curl grid
 void Fluid::updateCurlGrid()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
@@ -520,6 +528,7 @@ void Fluid::updateCurlGrid()
 	}
 }
 
+// Amplifying vortices
 void Fluid::vorticityConfinement()
 {
 	Grid<double> newFlowX = flowX;
