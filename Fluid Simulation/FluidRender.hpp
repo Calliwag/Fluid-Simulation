@@ -14,12 +14,18 @@ private:
 
 	// Rendering
 	raylib::Window window;
+	int sizeX;
+	int sizeY;
+	int renderX;
+	int renderY;
 	int renderScale;
 	int drawMode; // 0 = dye, 1 = pressure, 2 = curl
 	glm::dvec2 drawMinMax;
 	bool drawLines;
 	int lineSize;
 	int maxFrames;
+	int verticalBorder = 3;
+	int horizontalBorder = 3;
 
 	Grid<double> drawGrid;
 	Grid<glm::dvec2> flowGrid;

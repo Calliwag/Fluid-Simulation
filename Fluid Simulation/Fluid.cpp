@@ -192,11 +192,11 @@ void Fluid::updateLoop()
 {
 	while (!updateThreadShouldJoin)
 	{
-		m.lock();
+		updateMutex.lock();
 		frames++;
 		auto t1 = std::chrono::high_resolution_clock::now();
 		update();
-		m.unlock();
+		updateMutex.unlock();
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto ms_int = duration_cast<std::chrono::milliseconds>(t2 - t1);
 		cout << "Frame " << frames << ", at " << int(1000.0 / ms_int.count()) << " fps\n";
@@ -206,8 +206,7 @@ void Fluid::updateLoop()
 void Fluid::update()
 {
 	// Vorticity Confinement Step
-	updateFlowGrid();
-	updateCurlGrid();
+	updateFlowAndCurl();
 	vorticityConfinement();
 
 	// Incompressibility Step
@@ -226,8 +225,7 @@ void Fluid::update()
 	diffuseDye();
 
 	// Update Flow Grid for Rendering
-	updateFlowGrid();
-	updateCurlGrid();
+	updateFlowAndCurl();
 }
 
 // Updating all sources of velocity
@@ -273,7 +271,24 @@ void Fluid::updateDyeSources()
 	}
 }
 
-// Updating flow at center of grid cells
+//Updating flow and curl grid
+void Fluid::updateFlowAndCurl()
+{
+	for (int x = 1; x < sizeX - 1; x++)
+	{
+		for (int y = 1; y < sizeY - 1; y++)
+		{
+			flowGrid[x][y] = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
+							   flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
+			curlGrid[x][y] = fluidField[x][y + 1] * flowGrid[x][y + 1].x -
+							 fluidField[x][y - 1] * flowGrid[x][y - 1].x +
+							 fluidField[x - 1][y] * flowGrid[x - 1][y].y -
+							 fluidField[x + 1][y] * flowGrid[x + 1][y].y;;
+		}
+	}
+}
+
+// Updating flow grid
 void Fluid::updateFlowGrid()
 {
 	for (int x = 1; x < sizeX - 1; x++)
@@ -282,6 +297,22 @@ void Fluid::updateFlowGrid()
 		{
 			flowGrid[x][y] = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
 							   flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
+		}
+	}
+}
+
+// Updating curl grid
+void Fluid::updateCurlGrid()
+{
+#pragma omp parallel for num_threads(12) collapse(2)
+	for (int x = 1; x < sizeX - 1; x++)
+	{
+		for (int y = 1; y < sizeY - 1; y++)
+		{
+			curlGrid[x][y] = fluidField[x][y + 1] * flowGrid[x][y + 1].x -
+				fluidField[x][y - 1] * flowGrid[x][y - 1].x +
+				fluidField[x - 1][y] * flowGrid[x - 1][y].y -
+				fluidField[x + 1][y] * flowGrid[x + 1][y].y;;
 		}
 	}
 }
@@ -510,22 +541,6 @@ void Fluid::advectDye()
 		}
 	}
 	dye = newDye;
-}
-
-// Updating curl grid
-void Fluid::updateCurlGrid()
-{
-#pragma omp parallel for num_threads(12) collapse(2)
-	for (int x = 1; x < sizeX - 1; x++)
-	{
-		for (int y = 1; y < sizeY - 1; y++)
-		{
-			curlGrid[x][y] = fluidField[x][y + 1] * flowGrid[x][y + 1].x -
-							 fluidField[x][y - 1] * flowGrid[x][y - 1].x +
-							 fluidField[x - 1][y] * flowGrid[x - 1][y].y -
-							 fluidField[x + 1][y] * flowGrid[x + 1][y].y;;
-		}
-	}
 }
 
 // Amplifying vortices

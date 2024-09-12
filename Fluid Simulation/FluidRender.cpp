@@ -16,14 +16,18 @@ FluidRender::FluidRender(std::shared_ptr<Fluid> _fluid, glm::dvec4 _baseDye, glm
 	drawLines = _drawLines;
 	lineSize = _lineSize;
 
-	SetTraceLogLevel(5);
-	raylib::Window window(100, 100, "Fluid Simulation");
-	SetWindowSize(fluid->sizeX * renderScale, fluid->sizeY * renderScale);
-	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - fluid->sizeX * renderScale / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - fluid->sizeY * renderScale / 2);
+	sizeX = fluid->sizeX - 2 * horizontalBorder;
+	sizeY = fluid->sizeY - 2 * verticalBorder;
+	renderX = sizeX * renderScale;
+	renderY = sizeY * renderScale;
 
-	fluidRenderTexture = LoadRenderTexture(fluid->sizeX, fluid->sizeY);
-	linesRenderTexture = LoadRenderTexture(fluid->sizeX * renderScale, fluid->sizeY * renderScale);
-	screenRenderTexture = LoadRenderTexture(fluid->sizeX * renderScale, fluid->sizeY * renderScale);
+	SetTraceLogLevel(5);
+	raylib::Window window(renderX, renderY, "Fluid Simulation");
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2);
+
+	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
+	linesRenderTexture = LoadRenderTexture(renderX, renderY);
+	screenRenderTexture = LoadRenderTexture(renderX, renderY);
 }
 
 void FluidRender::getGrids()
@@ -50,13 +54,15 @@ void FluidRender::getGrids()
 void FluidRender::draw()
 {
 	BeginTextureMode(fluidRenderTexture);
-	ClearBackground(BLACK);
-	for (int x = 0; x < fluid->sizeX; x++)
+	ClearBackground(BLANK);
+	for (int x = 0; x < sizeX; x++)
 	{
-		for (int y = 0; y < fluid->sizeY; y++)
+		for (int y = 0; y < sizeY; y++)
 		{
 			Color cellColor = YELLOW;
-			if (fluid->fluidField[x][y] == 0)
+			int pX = x + horizontalBorder;
+			int pY = y + horizontalBorder;
+			if (fluid->fluidField[pX][pY] == 0)
 			{
 				cellColor.r = barrierColor.x * 255;
 				cellColor.g = barrierColor.y * 255;
@@ -65,23 +71,23 @@ void FluidRender::draw()
 			}
 			else if (drawMode == 0)
 			{
-				cellColor.r = dyeGrid[x][y].x * 255;
-				cellColor.g = dyeGrid[x][y].y * 255;
-				cellColor.b = dyeGrid[x][y].z * 255;
-				cellColor.a = dyeGrid[x][y].w * 255;
+				cellColor.r = dyeGrid[pX][pY].x * 255;
+				cellColor.g = dyeGrid[pX][pY].y * 255;
+				cellColor.b = dyeGrid[pX][pY].z * 255;
+				cellColor.a = dyeGrid[pX][pY].w * 255;
 			}
 			else if (drawMode == 1)
 			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.a = 255;
 			}
 			else if (drawMode == 2)
 			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.a = 255;
 			}
 			DrawPixel(x, y, cellColor);
@@ -93,11 +99,11 @@ void FluidRender::draw()
 	ClearBackground(BLANK);
 	if (drawLines)
 	{
-		for (int x = 1; x < fluid->sizeX - 1; x += lineSize)
+		for (int x = 0; x < sizeX; x += lineSize)
 		{
-			for (int y = 1; y < fluid->sizeY - 1; y += lineSize)
+			for (int y = 0; y < sizeX; y += lineSize)
 			{
-				glm::dvec2 velocity = flowGrid[x][y];
+				glm::dvec2 velocity = flowGrid[x + horizontalBorder][y + verticalBorder];
 				DrawLine(x * renderScale + renderScale / 2.0, y * renderScale + renderScale / 2.0, (x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, WHITE);
 				DrawCircle((x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, 2, WHITE);
 			}
@@ -113,7 +119,7 @@ void FluidRender::draw()
 
 	window.BeginDrawing();
 	window.ClearBackground(BLACK);
-	DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * fluid->sizeX * renderScale,1.0f * fluid->sizeY * renderScale }, { 0,0 }, WHITE);
+	DrawTextureRec(screenRenderTexture.texture, Rectangle{ 0,0,1.0f * renderX,1.0f * renderY }, { 0,0 }, WHITE);
 	window.EndDrawing();
 }
 
@@ -148,10 +154,10 @@ void FluidRender::saveVideo()
 		}
 		catch (cv::Exception& e)
 		{
-			std::cout << e.msg << std::endl;
+			std::cout << e.msg << "\n";
 		}
 	}
-	std::cout << "Saving video" << std::endl;
+	std::cout << "Saving video\n";
 	outputVideo.release();
 	system("ffmpeg -i simulationOutput.mp4 -vcodec libx264 -crf 18 -pix_fmt yuv420p simulationOutputCompressed.mp4");
 	videoCaptured = 1;
@@ -164,7 +170,7 @@ void FluidRender::mainLoop()
 	std::jthread updateThread(&Fluid::updateLoop, fluid);
 	while (!exitWindow)
 	{
-		fluid->m.lock();
+		fluid->updateMutex.lock();
 		while (drawnFrames != fluid->frames && drawnFrames <= maxFrames)
 		{
 			drawnFrames++;
@@ -173,7 +179,7 @@ void FluidRender::mainLoop()
 			if (drawnFrames == maxFrames && !videoCaptured) saveVideo();
 		}
 		getGrids();
-		fluid->m.unlock();
+		fluid->updateMutex.unlock();
 		draw();
 
 		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
@@ -181,7 +187,7 @@ void FluidRender::mainLoop()
 			exitWindow = true;
 			fluid->updateThreadShouldJoin = 1;
 			updateThread.join();
-			std::cout << "Simulation closed by user" << std::endl;
+			std::cout << "Simulation closed by user\n";
 		}
 	}
 }

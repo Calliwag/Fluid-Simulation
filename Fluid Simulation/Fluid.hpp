@@ -27,7 +27,7 @@ public:
 	double diffuseValue = 0;
 
 	// Temporary Value Storage Grids
-	Grid<glm::dvec2> flowGrid;
+	Grid<glm::dvec2> flowGrid = {};
 	Grid<double> curlGrid = {};
 	Grid<double> pressureGrid = {};
 
@@ -36,12 +36,12 @@ public:
 	int sizeY;
 	int frames = 0;
 	double timeStep = 1.0 / 10;
-	double vorticity = 0.0;
+	double vorticity = 0.05;
 	int relaxationSteps = 50;
 
 	// Threading for drawing
 	bool updateThreadShouldJoin = 0;
-	std::mutex m;
+	std::mutex updateMutex;
 
 	// Constructor
 	Fluid(int _sizeX, int _sizeY);
@@ -60,29 +60,31 @@ public:
 	void storeScreenImage();
 
 	// Simulation
+	// Update loop
 	void updateLoop();
-
 	void update();
 
+	// Update sources
 	void updateFlowSources();
-
 	void updateDyeSources();
 
+	// Update flow and curl
+	void updateFlowAndCurl();
 	void updateFlowGrid();
-
-	void decayDye();
-
-	void diffuseDye();
-
-	void solveIncompressibility();
-
-	bool solveIncompressibilityAt(int x, int y);
-
-	void advectVelocity();
-
-	void advectDye();
-
 	void updateCurlGrid();
 
+	// Decay / diffuse dye
+	void decayDye();
+	void diffuseDye();
+
+	// Solve incompressibility
+	void solveIncompressibility();
+	bool solveIncompressibilityAt(int x, int y);
+
+	// Advection
+	void advectVelocity();
+	void advectDye();
+
+	// Vorticity Confinement
 	void vorticityConfinement();
 };
