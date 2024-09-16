@@ -28,6 +28,8 @@ FluidRender::FluidRender(std::shared_ptr<Fluid> _fluid, glm::dvec4 _baseDye, glm
 	fluidRenderTexture = LoadRenderTexture(sizeX, sizeY);
 	linesRenderTexture = LoadRenderTexture(renderX, renderY);
 	screenRenderTexture = LoadRenderTexture(renderX, renderY);
+
+	images.reserve(maxFrames);
 }
 
 void FluidRender::getGrids()
@@ -76,14 +78,7 @@ void FluidRender::draw()
 				cellColor.b = dyeGrid[pX][pY].z * 255;
 				cellColor.a = dyeGrid[pX][pY].w * 255;
 			}
-			else if (drawMode == 1)
-			{
-				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
-				cellColor.g = 0;
-				cellColor.b = glm::mix(255, 0, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
-				cellColor.a = 255;
-			}
-			else if (drawMode == 2)
+			else if (drawMode == 1 || drawMode == 2)
 			{
 				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;
@@ -101,7 +96,7 @@ void FluidRender::draw()
 	{
 		for (int x = 0; x < sizeX; x += lineSize)
 		{
-			for (int y = 0; y < sizeX; y += lineSize)
+			for (int y = 0; y < sizeY; y += lineSize)
 			{
 				glm::dvec2 velocity = flowGrid[x + horizontalBorder][y + verticalBorder];
 				DrawLine(x * renderScale + renderScale / 2.0, y * renderScale + renderScale / 2.0, (x + velocity.x * 0.0625 * lineSize) * renderScale + renderScale / 2.0, (y + velocity.y * 0.0625 * lineSize) * renderScale + renderScale / 2.0, WHITE);
@@ -171,7 +166,7 @@ void FluidRender::mainLoop()
 	while (!exitWindow)
 	{
 		fluid->updateMutex.lock();
-		while (drawnFrames != fluid->frames && drawnFrames <= maxFrames)
+		while (drawnFrames != fluid->frame && drawnFrames <= maxFrames)
 		{
 			drawnFrames++;
 			std::cout << "Frame " << drawnFrames << " saved\n";

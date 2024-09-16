@@ -23,7 +23,7 @@ public:
 
 	Grid<glm::dvec4> dye = {};
 	Grid<glm::dvec4> dyeSource = {};
-	double decayValue = 1;
+	double decayValue = 0;
 	double diffuseValue = 0;
 
 	// Temporary Value Storage Grids
@@ -34,22 +34,19 @@ public:
 	// Simulation Parameters
 	int sizeX;
 	int sizeY;
-	int frames = 0;
-	double timeStep = 1.0 / 10;
-	double vorticity = 0.05;
-	int relaxationSteps = 50;
+	int frame;
+	double timeStep = 0.1;
+	double vorticity;
+	int relaxationSteps;
 
 	// Threading for drawing
-	bool updateThreadShouldJoin = 0;
+	bool updateThreadShouldJoin;
 	std::mutex updateMutex;
 
 	// Constructor
 	Fluid(int _sizeX, int _sizeY);
-	Fluid(Image layoutImage, glm::dvec4 dyeColor);
-	Fluid(Image layoutImage, Image dyeImage);
-
-	// Destructor
-	~Fluid();
+	Fluid(Image layoutImage, glm::dvec4 dyeColor, double _vorticity, int _relaxationSteps);
+	Fluid(Image layoutImage, Image dyeImage, double _vorticity, int _relaxationSteps);
 
 	// Main Loop
 	void mainLoop();
@@ -70,8 +67,6 @@ public:
 
 	// Update flow and curl
 	void updateFlowAndCurl();
-	void updateFlowGrid();
-	void updateCurlGrid();
 
 	// Decay / diffuse dye
 	void decayDye();

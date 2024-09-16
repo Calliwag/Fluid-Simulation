@@ -19,6 +19,16 @@ int main(int argc, char* argv[])
 	program.add_argument("--DyeSourceImage")
 		.help("Image to determine dye sources. Not strictly needed for dye mode.");
 
+	program.add_argument("--Vorticity")
+		.help("Set the vorticity of the fluid.")
+		.scan<'g', double>()
+		.default_value(0.0);
+
+	program.add_argument("--RelaxationSteps")
+		.help("Set the number of relaxation steps for solving incompressibility. 25 recommended.")
+		.scan<'i', int>()
+		.default_value(25);
+
 	program.add_argument("--DrawMode")
 		.help("What the simulation renders: 0 = Dye, 1 = Pressure, 2 = Vorticity. --DrawMinMax should be used if --DrawMode is set to 1 or 2.")
 		.scan<'i', int>()
@@ -62,11 +72,15 @@ int main(int argc, char* argv[])
 	if (program.is_used("--DyeSourceImage"))
 	{
 		Image dyeInputImage = LoadImage(program.get<>("--DyeSourceImage").c_str());
-		fluid = std::make_shared<Fluid>(inputImage,dyeInputImage);
+		fluid = std::make_shared<Fluid>(inputImage, dyeInputImage, 
+			program.get<double>("--Vorticity"), 
+			program.get<int>("--RelaxationSteps"));
 	}
 	else
 	{
-		fluid = std::make_shared<Fluid>(inputImage,glm::dvec4{ 1,0,0,1 });
+		fluid = std::make_shared<Fluid>(inputImage, glm::dvec4{ 1,0,0,1 }, 
+			program.get<double>("--Vorticity"), 
+			program.get<int>("--RelaxationSteps"));
 	}
 
 	//Construct fluidRender

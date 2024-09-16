@@ -34,8 +34,11 @@ Fluid::Fluid(int _sizeX, int _sizeY)
 }
 
 // Constructor with only layout image
-Fluid::Fluid(Image layoutImage, glm::dvec4 dyeColor)
+Fluid::Fluid(Image layoutImage, glm::dvec4 dyeColor, double _vorticity, int _relaxationSteps)
 {
+	vorticity = _vorticity;
+	relaxationSteps = _relaxationSteps;
+
 	Color* layoutImageColorsArr = LoadImageColors(layoutImage);
 	vector<vector<glm::ivec4>>  layoutImageColors = {};
 	layoutImageColors.resize(layoutImage.width);
@@ -98,11 +101,16 @@ Fluid::Fluid(Image layoutImage, glm::dvec4 dyeColor)
 			}
 		}
 	}
+
+	frame = 0;
 }
 
 // Constructor with layout image and dye source image
-Fluid::Fluid(Image layoutImage, Image dyeImage)
+Fluid::Fluid(Image layoutImage, Image dyeImage, double _vorticity, int _relaxationSteps)
 {
+	vorticity = _vorticity;
+	relaxationSteps = _relaxationSteps;
+
 	if (!(layoutImage.width == dyeImage.width && layoutImage.height == dyeImage.height))
 	{
 		cout << "Layout image must have same dimensions as dye image." << endl;
@@ -180,52 +188,46 @@ Fluid::Fluid(Image layoutImage, Image dyeImage)
 			}
 		}
 	}
-}
 
-// Destructor, unused
-Fluid::~Fluid()
-{
-
+	frame = 0;
 }
 
 void Fluid::updateLoop()
 {
+	updateThreadShouldJoin = 0;
+	updateFlowAndCurl();
 	while (!updateThreadShouldJoin)
 	{
 		updateMutex.lock();
-		frames++;
+		frame++;
 		auto t1 = std::chrono::high_resolution_clock::now();
 		update();
 		updateMutex.unlock();
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto ms_int = duration_cast<std::chrono::milliseconds>(t2 - t1);
-		cout << "Frame " << frames << ", at " << int(1000.0 / ms_int.count()) << " fps\n";
+		cout << "Frame " << frame << ", at " << int(1000.0 / ms_int.count()) << " fps\n";
 	}
 }
 
 void Fluid::update()
 {
 	// Vorticity Confinement Step
-	updateFlowAndCurl();
 	vorticityConfinement();
 
-	// Incompressibility Step
+	// Solve Incompressibility
 	solveIncompressibility();
 
-	// Advection Step
+	// Advect Velocity
 	advectVelocity();
-	// Should only be for drawMode = 0
-	updateFlowGrid();
+
+	//Advect Dye
+	updateFlowAndCurl();
 	updateDyeSources();
 	advectDye();
 
 	// Dye Decay and Diffuse Step
-	// Should only be for drawMode = 0
 	decayDye();
 	diffuseDye();
-
-	// Update Flow Grid for Rendering
-	updateFlowAndCurl();
 }
 
 // Updating all sources of velocity
@@ -274,6 +276,7 @@ void Fluid::updateDyeSources()
 //Updating flow and curl grid
 void Fluid::updateFlowAndCurl()
 {
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -288,45 +291,17 @@ void Fluid::updateFlowAndCurl()
 	}
 }
 
-// Updating flow grid
-void Fluid::updateFlowGrid()
-{
-	for (int x = 1; x < sizeX - 1; x++)
-	{
-		for (int y = 1; y < sizeY - 1; y++)
-		{
-			flowGrid[x][y] = { flowX[x + 1][y] * fluidField[x + 1][y] + flowX[x][y] * fluidField[x - 1][y],
-							   flowY[x][y + 1] * fluidField[x][y + 1] + flowY[x][y] * fluidField[x][y - 1] };
-		}
-	}
-}
-
-// Updating curl grid
-void Fluid::updateCurlGrid()
+// Decaying dye with 'decayValue'
+void Fluid::decayDye()
 {
 #pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
 		{
-			curlGrid[x][y] = fluidField[x][y + 1] * flowGrid[x][y + 1].x -
-				fluidField[x][y - 1] * flowGrid[x][y - 1].x +
-				fluidField[x - 1][y] * flowGrid[x - 1][y].y -
-				fluidField[x + 1][y] * flowGrid[x + 1][y].y;;
-		}
-	}
-}
-
-// Decaying dye with 'decayValue'
-void Fluid::decayDye()
-{
-	for (int x = 1; x < sizeX - 1; x++)
-	{
-		for (int y = 1; y < sizeY - 1; y++)
-		{
 			if (fluidField[x][y] == 1)
 			{
-				dye[x][y] = baseDye - decayValue * (baseDye - dye[x][y]);
+				dye[x][y] = baseDye - (1 - decayValue) * (baseDye - dye[x][y]);
 			}
 		}
 	}
@@ -335,6 +310,7 @@ void Fluid::decayDye()
 // Diffusing dye with 'diffuseValue'
 void Fluid::diffuseDye()
 {
+#pragma omp parallel for num_threads(12) collapse(2)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -368,7 +344,7 @@ void Fluid::solveIncompressibility()
 	for (int i = 0; i < relaxationSteps; i++)
 	{
 		updateFlowSources();
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 		for (int x = 1; x < sizeX - 1; x++)
 		{
 			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
@@ -380,7 +356,7 @@ void Fluid::solveIncompressibility()
 			}
 		}
 		updateFlowSources();
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 		for (int x = 1; x < sizeX - 1; x++)
 		{
 			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
