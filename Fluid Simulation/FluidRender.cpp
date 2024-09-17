@@ -185,4 +185,5 @@ void FluidRender::mainLoop()
 			std::cout << "Simulation closed by user\n";
 		}
 	}
+	CloseWindow();
 }

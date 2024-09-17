@@ -371,7 +371,7 @@ void Fluid::solveIncompressibility()
 }
 
 // Solve incompressibility at a specific grid cell
-bool Fluid::solveIncompressibilityAt(int x, int y)
+void Fluid::solveIncompressibilityAt(int x, int y)
 {
 	double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
 		(flowX[x][y] * fluidField[x - 1][y]) +
@@ -384,8 +384,6 @@ bool Fluid::solveIncompressibilityAt(int x, int y)
 	flowY[x][y + 1] -= correctionFactor * fluidField[x][y + 1];
 	flowY[x][y] += correctionFactor * fluidField[x][y - 1];
 	pressureGrid[x][y] -= divergence / (fluidCount * timeStep);
-
-	return 1;
 }
 
 // Advecting(moving) velocity

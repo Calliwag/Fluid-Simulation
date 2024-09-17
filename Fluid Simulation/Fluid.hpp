@@ -74,7 +74,7 @@ public:
 
 	// Solve incompressibility
 	void solveIncompressibility();
-	bool solveIncompressibilityAt(int x, int y);
+	void solveIncompressibilityAt(int x, int y);
 
 	// Advection
 	void advectVelocity();

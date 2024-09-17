@@ -199,12 +199,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FluidCreate.cpp" />
     <ClCompile Include="FluidRender.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Fluid.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid.hpp" />
+    <ClInclude Include="FluidCreate.hpp" />
     <ClInclude Include="FluidRender.hpp" />
     <ClInclude Include="Grid.hpp" />
   </ItemGroup>
