@@ -1,5 +1,4 @@
 #include "FluidCreate.hpp"
-#include "raylib-cpp.hpp"
 
 FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 {
@@ -28,18 +27,28 @@ FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 	SetTraceLogLevel(5);
 	raylib::Window window(renderX, renderY, "Fluid Simulation");
 	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2);
+
+	drawType = 0;
+	drawVel = { 0,0 };
 }
 
 void FluidCreate::createLoop()
 {
-	bool creating = 1;
-	while (creating)
+	bool exitWindow = 0;
+	while (!exitWindow)
 	{
 		// Get input, draw to grids
+		input();
 
 		// Draw to screen
 		draw();
+		if (IsKeyPressed(KEY_ESCAPE) || WindowShouldClose())
+		{
+			exitWindow = true;
+			std::cout << "Fluid creation closed by user\n";
+		}
 	}
+	// For some reason this doesn't actually close the window? Valve pls fix
 	CloseWindow();
 }
 
@@ -85,4 +94,39 @@ void FluidCreate::draw()
 	}
 
 	window.EndDrawing();
+}
+
+void FluidCreate::input()
+{
+	glm::dvec2 mPos = mouseToGrid(GetMousePosition());
+	int x = mPos.x;
+	int y = mPos.y;
+	if (drawType == 0)
+	{
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+		{
+			fluidField[x][y] = 0;
+		}
+		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+		{
+			fluidField[x][y] = 1;
+		}
+	}
+	if (drawType == 1)
+	{
+		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+		{
+			flowSource[x][y] = drawVel;
+		}
+		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+		{
+			flowSource[x][y] = { 0,0 };
+		}
+	}
+}
+
+glm::ivec2 FluidCreate::mouseToGrid(Vector2 mousePos)
+{
+	glm::ivec2 gridPos = { mousePos.x / renderScale, mousePos.y / renderScale };
+	return gridPos;
 }

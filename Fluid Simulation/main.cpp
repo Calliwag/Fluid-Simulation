@@ -1,8 +1,7 @@
 #include "Fluid.hpp"
 #include "FluidRender.hpp"
+#include "FluidCreate.hpp"
 #include <argparse/argparse.hpp>
-
-std::shared_ptr<Fluid> fluid;
 
 int main(int argc, char* argv[])
 {
@@ -10,6 +9,9 @@ int main(int argc, char* argv[])
 	Basic Commands ".\Fluid Simulation.exe" Input.png --DyeSourceImage DyeInput.png --DrawMode 0 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
 	Additional Commands --MaxFrames 3600
 	*/
+
+	FluidCreate create(200, 75, 6);
+	create.createLoop();
 
 	argparse::ArgumentParser program("FluidSimulation");
 
@@ -66,6 +68,8 @@ int main(int argc, char* argv[])
 		std::cerr << program;
 		return 1;
 	}
+
+	std::shared_ptr<Fluid> fluid;
 
 	// Construct fluid(shared_ptr)
 	Image inputImage = LoadImage(program.get<>("SourceImage").c_str());
