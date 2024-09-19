@@ -6,15 +6,15 @@
 #include "Grid.hpp"
 #include <thread>
 #include <mutex>
+#include "FluidCreate.hpp"
 
 class Fluid
 {
 public:
 	// Simulation Grids
 	Grid<double> flowX = {};
-	Grid<double> sourceX = {};
 	Grid<double> flowY = {};
-	Grid<double> sourceY = {};
+	Grid <glm::dvec2> flowSource = {};
 	Grid<uint8_t> fluidField = {};
 
 	// Dye Related
@@ -47,6 +47,7 @@ public:
 	Fluid(int _sizeX, int _sizeY);
 	Fluid(Image layoutImage, glm::dvec4 dyeColor, double _vorticity, int _relaxationSteps);
 	Fluid(Image layoutImage, Image dyeImage, double _vorticity, int _relaxationSteps);
+	Fluid(FluidInfo info, double _vorticity, int _relaxationSteps);
 
 	// Main Loop
 	void mainLoop();

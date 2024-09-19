@@ -28,9 +28,8 @@ Fluid::Fluid(int _sizeX, int _sizeY)
 	}
 
 	flowX.resize(sizeX + 1, sizeY);
-	sourceX.resize(sizeX + 1, sizeY);
 	flowY.resize(sizeX, sizeY + 1);
-	sourceY.resize(sizeX, sizeY + 1);
+	flowSource.resize(sizeX, sizeY);
 }
 
 // Constructor with only layout image
@@ -69,9 +68,8 @@ Fluid::Fluid(Image layoutImage, glm::dvec4 dyeColor, double _vorticity, int _rel
 	curlGrid.resize(sizeX, sizeY);
 
 	flowX.resize(sizeX + 1, sizeY);
-	sourceX.resize(sizeX + 1, sizeY);
 	flowY.resize(sizeX, sizeY + 1);
-	sourceY.resize(sizeX, sizeY + 1);
+	flowSource.resize(sizeX, sizeY);
 
 	for (int x = 0; x < sizeX; x++)
 	{
@@ -90,10 +88,7 @@ Fluid::Fluid(Image layoutImage, glm::dvec4 dyeColor, double _vorticity, int _rel
 
 			if ((r != 0 || g != 0) && b != 128)
 			{
-				sourceX[x][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
-				sourceX[x + 1][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
-				sourceY[x][y] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
-				sourceY[x][y + 1] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
+				flowSource[x][y] = glm::dvec2{r / 255.0 * (2 * b / 255.0 - 1) * 10, g / 255.0 * (2 * b / 255.0 - 1) * 10};
 			}
 			else if (r == 0 && g == 0 && layoutImageColors[x][y].b != 0)
 			{
@@ -156,9 +151,8 @@ Fluid::Fluid(Image layoutImage, Image dyeImage, double _vorticity, int _relaxati
 	curlGrid.resize(sizeX, sizeY);
 
 	flowX.resize(sizeX + 1, sizeY);
-	sourceX.resize(sizeX + 1, sizeY);
 	flowY.resize(sizeX, sizeY + 1);
-	sourceY.resize(sizeX, sizeY + 1);
+	flowSource.resize(sizeX, sizeY);
 
 	for (int x = 0; x < sizeX; x++)
 	{
@@ -177,10 +171,7 @@ Fluid::Fluid(Image layoutImage, Image dyeImage, double _vorticity, int _relaxati
 
 			if ((r != 0 || g != 0) && b != 128)
 			{
-				sourceX[x][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
-				sourceX[x + 1][y] = r / 255.0 * (2 * b / 255.0 - 1) * 10;
-				sourceY[x][y] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
-				sourceY[x][y + 1] = g / 255.0 * (2 * b / 255.0 - 1) * 10;
+				flowSource[x][y] = glm::dvec2{ r / 255.0 * (2 * b / 255.0 - 1) * 10, g / 255.0 * (2 * b / 255.0 - 1) * 10 };
 			}
 			if (dyeImageColors[x][y].a != 0)
 			{
@@ -190,6 +181,25 @@ Fluid::Fluid(Image layoutImage, Image dyeImage, double _vorticity, int _relaxati
 	}
 
 	frame = 0;
+}
+
+Fluid::Fluid(FluidInfo info, double _vorticity, int _relaxationSteps)
+{
+	sizeX = info.sizeX;
+	sizeY = info.sizeY;
+	dyeSource = info.dyeSource;
+	fluidField = info.fluidField;
+	flowSource = info.flowSource;
+
+	dye.resize(sizeX, sizeY, baseDye);
+	pressureGrid.resize(sizeX, sizeY);
+	flowGrid.resize(sizeX, sizeY);
+	curlGrid.resize(sizeX, sizeY);
+	flowX.resize(sizeX + 1, sizeY);
+	flowY.resize(sizeX, sizeY + 1);
+
+	vorticity = _vorticity;
+	relaxationSteps = _relaxationSteps;
 }
 
 void Fluid::updateLoop()
@@ -233,25 +243,16 @@ void Fluid::update()
 // Updating all sources of velocity
 void Fluid::updateFlowSources()
 {
-#pragma omp parallel for num_threads(12) collapse(2)
-	for (int x = 0; x < sizeX + 1; x++)
+	for (int x = 1; x < sizeX - 1; x++)
 	{
-		for (int y = 0; y < sizeY; y++)
+		for (int y = 1; y < sizeY - 1; y++)
 		{
-			if (sourceX[x][y] != 0)
+			if (flowSource[x][y] != glm::dvec2{ 0, 0 })
 			{
-				flowX[x][y] = sourceX[x][y];
-			}
-		}
-	}
-#pragma omp parallel for num_threads(12) collapse(2)
-	for (int x = 0; x < sizeX; x++)
-	{
-		for (int y = 0; y < sizeY + 1; y++)
-		{
-			if (sourceY[x][y] != 0)
-			{
-				flowY[x][y] = sourceY[x][y];
+				flowX[x][y] = 0.5 * (flowSource[x - 1][y].x + flowSource[x][y].x);
+				flowX[x + 1][y] = 0.5 * (flowSource[x + 1][y].x + flowSource[x][y].x);
+				flowY[x][y] = 0.5 * (flowSource[x][y - 1].y + flowSource[x][y].y);
+				flowY[x][y + 1] = 0.5 * (flowSource[x][y + 1].y + flowSource[x][y].y);
 			}
 		}
 	}

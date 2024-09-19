@@ -10,9 +10,6 @@ int main(int argc, char* argv[])
 	Additional Commands --MaxFrames 3600
 	*/
 
-	FluidCreate create(200, 75, 6);
-	create.createLoop();
-
 	argparse::ArgumentParser program("FluidSimulation");
 
 	program.add_argument("--SourceImage")
@@ -69,12 +66,11 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	std::shared_ptr<Fluid> fluid;
-
 	// Construct fluid(shared_ptr)
-	Image inputImage = LoadImage(program.get<>("SourceImage").c_str());
+	std::shared_ptr<Fluid> fluid;
 	if (program.is_used("--SourceImage"))
 	{
+		Image inputImage = LoadImage(program.get<>("SourceImage").c_str());
 		if (program.is_used("--DyeSourceImage"))
 		{
 			Image dyeInputImage = LoadImage(program.get<>("--DyeSourceImage").c_str());
@@ -91,7 +87,10 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-
+		FluidCreate create(200, 75, 6);
+		create.createLoop();
+		FluidInfo info(create);
+		fluid = std::make_shared<Fluid>(info, program.get<double>("--Vorticity"), program.get<int>("--RelaxationSteps"));
 	}
 
 	//Construct fluidRender
@@ -109,14 +108,3 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
