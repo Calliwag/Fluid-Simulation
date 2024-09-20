@@ -1,9 +1,11 @@
 #pragma once
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include "glm/glm.hpp"
 #include "raylib-cpp.hpp"
 #include "Grid.hpp"
+
 
 class FluidCreate
 {
@@ -36,16 +38,16 @@ public:
 
 };
 
-class FluidInfo
+struct FluidInfo
 {
 public:
-	int sizeX;
-	int sizeY;
-	int renderScale;
+	uint16_t sizeX;
+	uint16_t sizeY;
+	uint16_t renderScale;
 
 	Grid<uint8_t> fluidField;
 	Grid<glm::dvec4> dyeSource;
-	Grid <glm::dvec2> flowSource;
+	Grid<glm::dvec2> flowSource;
 	glm::dvec4 baseDye;
 	glm::dvec4 barrierColor;
 

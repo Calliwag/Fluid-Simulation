@@ -18,6 +18,13 @@ int main(int argc, char* argv[])
 	program.add_argument("--DyeSourceImage")
 		.help("Image to determine dye sources. Not strictly needed for dye mode.");
 
+	program.add_argument("--SimFile")
+		.help("Specify name of input '.sim' file.");
+
+	program.add_argument("--SaveSimFile")
+		.help("If no sim file is provided, should the program save the simfile the user creates.")
+		.flag();
+
 	program.add_argument("--Vorticity")
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
@@ -48,7 +55,7 @@ int main(int argc, char* argv[])
 		.help("Should velocity lines be rendered and at what size (boolean, int).")
 		.nargs(2)
 		.scan<'i', int>()
-		.default_value(std::vector<int>{0});
+		.default_value(std::vector<int>{0,1});
 
 	program.add_argument("--MaxFrames")
 		.help("How many frames should be saved as .png files")
@@ -70,7 +77,7 @@ int main(int argc, char* argv[])
 	std::shared_ptr<Fluid> fluid;
 	if (program.is_used("--SourceImage"))
 	{
-		Image inputImage = LoadImage(program.get<>("SourceImage").c_str());
+		Image inputImage = LoadImage(program.get<>("--SourceImage").c_str());
 		if (program.is_used("--DyeSourceImage"))
 		{
 			Image dyeInputImage = LoadImage(program.get<>("--DyeSourceImage").c_str());
@@ -85,11 +92,17 @@ int main(int argc, char* argv[])
 				program.get<int>("--RelaxationSteps"));
 		}
 	}
+	if (program.is_used("--SimFile"))
+	{
+		FluidInfo info(program.get<>("--SimFile"));
+		fluid = std::make_shared<Fluid>(info, program.get<double>("--Vorticity"), program.get<int>("--RelaxationSteps"));
+	}
 	else
 	{
 		FluidCreate create(200, 75, 6);
 		create.createLoop();
 		FluidInfo info(create);
+		if(program["--SaveSimFile"] == true) info.saveTo("setup.sim");
 		fluid = std::make_shared<Fluid>(info, program.get<double>("--Vorticity"), program.get<int>("--RelaxationSteps"));
 	}
 

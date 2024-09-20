@@ -185,7 +185,67 @@ FluidInfo::FluidInfo(FluidCreate data)
 	barrierColor = data.barrierColor;
 }
 
+FluidInfo::FluidInfo(std::string fileName)
+{
+	std::ifstream fin(fileName);
+	// Read size and render scale
+	fin >> sizeX >> sizeY >> renderScale;
+
+	// Read base dye
+	fin >> baseDye.x >> baseDye.y >> baseDye.z >> baseDye.w;
+
+	// Read barrier color
+	fin >> barrierColor.x >> barrierColor.y >> barrierColor.z >> barrierColor.w;
+
+	// Size grids
+	fluidField.resize(sizeX, sizeY);
+	dyeSource.resize(sizeX, sizeY);
+	flowSource.resize(sizeX, sizeY);
+
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			// Read fluid field
+			fin >> fluidField[x][y];
+
+			// Read dye source
+			fin >> dyeSource[x][y].x;
+			fin >> dyeSource[x][y].y;
+			fin >> dyeSource[x][y].z;
+			fin >> dyeSource[x][y].w;
+
+			// Read flow source
+			fin >> flowSource[x][y].x;
+			fin >> flowSource[x][y].y;
+		}
+	}
+}
+
 void FluidInfo::saveTo(std::string fileName)
 {
-	//https://uscilab.github.io/cereal/
+	std::ofstream fout(fileName);
+	fout << sizeX << " " << sizeY << " "; // Write size, uint16_t
+	fout << renderScale << " "; // Write render scale, uint16_t
+	fout << baseDye.x << " " << baseDye.y << " " << baseDye.z << " " << baseDye.w << " "; // Write base dye
+	fout << barrierColor.x << " " << barrierColor.y << " " << barrierColor.z << " " << barrierColor.w << " "; // Write barrier color
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			// Write fluid field, uint8_t
+			fout << fluidField[x][y] << " ";
+
+			// Write dye source
+			fout << dyeSource[x][y].x << " ";
+			fout << dyeSource[x][y].y << " ";
+			fout << dyeSource[x][y].z << " ";
+			fout << dyeSource[x][y].w << " ";
+
+			// Write flow source
+			fout << flowSource[x][y].x << " ";
+			fout << flowSource[x][y].y << " ";
+		}
+	}
+	fout.close();
 }

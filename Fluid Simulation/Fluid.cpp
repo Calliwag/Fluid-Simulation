@@ -200,6 +200,8 @@ Fluid::Fluid(FluidInfo info, double _vorticity, int _relaxationSteps)
 
 	vorticity = _vorticity;
 	relaxationSteps = _relaxationSteps;
+
+	frame = 0;
 }
 
 void Fluid::updateLoop()
