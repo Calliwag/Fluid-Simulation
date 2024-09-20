@@ -29,15 +29,17 @@ private:
 	glm::dvec2 drawVel;
 	glm::dvec4 drawColor;
 	bool drawingRect = 0;
-	glm::ivec2 rectBase;
+	glm::dvec2 rectBase;
 	MouseButton rectButton; // 1 = left, 2 = right
+	bool exitWindow = 0;
+	int topBorder = 24;
 
 public:
 	FluidCreate(int _sizeX, int _sizeY, int _renderScale);
 	void createLoop();
 	void draw();
 	void input();
-	glm::ivec2 mouseToGrid(Vector2 mousePos);
+	glm::dvec2 mouseToGrid(Vector2 mousePos);
 
 	friend class FluidInfo;
 
