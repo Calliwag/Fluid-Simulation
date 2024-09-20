@@ -27,7 +27,7 @@ FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 	int renderY = sizeY * renderScale;
 	SetTraceLogLevel(5);
 	raylib::Window window(renderX, renderY + topBorder, "Fluid Simulation");
-	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2);
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2 - topBorder);
 
 	drawType = 1;
 	drawVel = { 0,0 };
