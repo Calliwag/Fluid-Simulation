@@ -23,9 +23,14 @@ private:
 
 	raylib::Window window;
 
+	// Drawing
 	int drawType;
+	bool rectMode = 0;
 	glm::dvec2 drawVel;
 	glm::dvec4 drawColor;
+	bool drawingRect = 0;
+	glm::ivec2 rectBase;
+	MouseButton rectButton; // 1 = left, 2 = right
 
 public:
 	FluidCreate(int _sizeX, int _sizeY, int _renderScale);
@@ -50,7 +55,6 @@ public:
 	Grid<glm::dvec2> flowSource;
 	glm::dvec4 baseDye;
 	glm::dvec4 barrierColor;
-
 
 public:
 	// Construct from FluidCreate

@@ -87,6 +87,16 @@ void FluidCreate::draw()
 		}
 	}
 
+	if (drawingRect)
+	{
+		glm::dvec2 mPos = mouseToGrid(GetMousePosition());
+		int x = mPos.x;
+		int y = mPos.y;
+		Color cellColor = GRAY;
+		cellColor.a = 128;
+		DrawRectangle(glm::min(rectBase.x,x) * renderScale, glm::min(rectBase.y, y) * renderScale, abs(x - rectBase.x) * renderScale, abs(y - rectBase.y) * renderScale, cellColor);
+	}
+
 	for (int x = 0; x < sizeX; x += 2)
 	{
 		for (int y = 0; y < sizeY; y += 2)
@@ -119,27 +129,113 @@ void FluidCreate::input()
 	{
 		return;
 	}
-	if (drawType == 1)
+	if (rectMode)
 	{
 		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
 		{
-			fluidField[x][y] = 0;
+			if (!drawingRect)
+			{
+				rectBase = { x,y };
+				drawingRect = 1;
+				rectButton = MOUSE_BUTTON_LEFT;
+			}
+			return;
 		}
 		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 		{
-			fluidField[x][y] = 1;
+			if (!drawingRect)
+			{
+				rectBase = { x,y };
+				drawingRect = 1;
+				rectButton = MOUSE_BUTTON_RIGHT;
+			}
+			return;
+		}
+		else if (drawingRect)
+		{
+			drawingRect = 0;
+
+			for (int ix = glm::min(rectBase.x, x); ix < glm::max(rectBase.x, x); ix++)
+			{
+				for (int iy = glm::min(rectBase.y, y); iy < glm::max(rectBase.y, y); iy++)
+				{
+					if (drawType == 1)
+					{
+						if (rectButton == MOUSE_BUTTON_LEFT)
+						{
+							fluidField[ix][iy] = 0;
+						}
+						else if (rectButton == MOUSE_BUTTON_RIGHT)
+						{
+							fluidField[ix][iy] = 1;
+						}
+					}
+					else if (drawType == 2)
+					{
+						if (rectButton == MOUSE_BUTTON_LEFT)
+						{
+							if (fluidField[ix][iy]) flowSource[ix][iy] = drawVel;
+						}
+						else if (rectButton == MOUSE_BUTTON_RIGHT)
+						{
+							flowSource[ix][iy] = { 0,0 };
+						}
+					}
+					else if (drawType == 3)
+					{
+						if (rectButton == MOUSE_BUTTON_LEFT)
+						{
+							if (fluidField[ix][iy]) dyeSource[ix][iy] = drawColor;
+						}
+						else if (rectButton == MOUSE_BUTTON_RIGHT)
+						{
+							dyeSource[ix][iy] = baseDye;
+						}
+					}
+				}
+			}
+			return;
 		}
 	}
-	else if (drawType == 2)
+	else
 	{
-		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+		if (drawType == 1)
 		{
-			if(fluidField[x][y]) flowSource[x][y] = drawVel;
+			if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+			{
+				fluidField[x][y] = 0;
+			}
+			else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+			{
+				fluidField[x][y] = 1;
+			}
 		}
-		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+		else if (drawType == 2)
 		{
-			flowSource[x][y] = { 0,0 };
+			if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+			{
+				if (fluidField[x][y]) flowSource[x][y] = drawVel;
+			}
+			else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+			{
+				flowSource[x][y] = { 0,0 };
+			}
 		}
+		else if (drawType == 3)
+		{
+			if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+			{
+				if (fluidField[x][y]) dyeSource[x][y] = drawColor;
+			}
+			else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+			{
+				dyeSource[x][y] = baseDye;
+			}
+		}
+	}
+
+	if (drawType == 2)
+	{
 		if (IsKeyPressed(KEY_BACKSPACE)) drawVel = { 0,0 };
 		else if (IsKeyPressed(KEY_UP)) drawVel.y -= 1;
 		else if (IsKeyPressed(KEY_DOWN)) drawVel.y += 1;
@@ -148,22 +244,17 @@ void FluidCreate::input()
 	}
 	else if (drawType == 3)
 	{
-		if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-		{
-			if (fluidField[x][y]) dyeSource[x][y] = drawColor;
-		}
-		else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
-		{
-			dyeSource[x][y] = baseDye;
-		}
 		if (IsKeyPressed(KEY_R)) drawColor.r = 1 - drawColor.r;
 		if (IsKeyPressed(KEY_G)) drawColor.g = 1 - drawColor.g;
 		if (IsKeyPressed(KEY_B)) drawColor.b = 1 - drawColor.b;
 		if (IsKeyPressed(KEY_A)) drawColor.a = 1 - drawColor.a;
 	}
+
 	if (IsKeyPressed(KEY_ONE)) drawType = 1;
 	if (IsKeyPressed(KEY_TWO)) drawType = 2;
 	if (IsKeyPressed(KEY_THREE)) drawType = 3;
+
+	if (IsKeyPressed(KEY_SPACE)) rectMode = !rectMode;
 }
 
 glm::ivec2 FluidCreate::mouseToGrid(Vector2 mousePos)
