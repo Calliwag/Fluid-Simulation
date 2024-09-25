@@ -21,10 +21,6 @@ int main(int argc, char* argv[])
 	program.add_argument("--SimFile")
 		.help("Specify name of input '.sim' file.");
 
-	program.add_argument("--SaveSimFile")
-		.help("If no sim file is provided, should the program save the simfile the user creates.")
-		.flag();
-
 	program.add_argument("--Vorticity")
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
@@ -102,7 +98,6 @@ int main(int argc, char* argv[])
 		FluidCreate create(200, 75, 6);
 		create.createLoop();
 		FluidInfo info(create);
-		if(program["--SaveSimFile"] == true) info.saveTo("setup.sim");
 		fluid = std::make_shared<Fluid>(info, program.get<double>("--Vorticity"), program.get<int>("--RelaxationSteps"));
 	}
 

@@ -32,7 +32,8 @@ private:
 	glm::dvec2 rectBase;
 	MouseButton rectButton; // 1 = left, 2 = right
 	bool exitWindow = 0;
-	int topBorder = 24;
+	float buttonHeight = 24;
+	float buttonWidth = 100;
 
 public:
 	FluidCreate(int _sizeX, int _sizeY, int _renderScale);

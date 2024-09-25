@@ -26,8 +26,8 @@ FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 	int renderX = sizeX * renderScale;
 	int renderY = sizeY * renderScale;
 	SetTraceLogLevel(5);
-	raylib::Window window(renderX, renderY + topBorder, "Fluid Simulation");
-	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2 - topBorder);
+	raylib::Window window(renderX, renderY + buttonHeight, "Fluid Simulation");
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2 - buttonHeight);
 
 	drawType = 1;
 	drawVel = { 0,0 };
@@ -80,13 +80,13 @@ void FluidCreate::draw()
 				cellColor.a = dyeSource[x][y].w * 255;
 			}
 
-			DrawRectangle(x * renderScale, y * renderScale + topBorder, renderScale, renderScale, cellColor);
+			DrawRectangle(x * renderScale, y * renderScale + buttonHeight, renderScale, renderScale, cellColor);
 
 			if (flowSource[x][y] != glm::dvec2{ 0,0 } && drawType != 3)
 			{
 				cellColor = GREEN;
 				cellColor.a = 128;
-				DrawRectangle(x * renderScale, y * renderScale + topBorder, renderScale, renderScale, cellColor);
+				DrawRectangle(x * renderScale, y * renderScale + buttonHeight, renderScale, renderScale, cellColor);
 			}
 		}
 	}
@@ -98,7 +98,7 @@ void FluidCreate::draw()
 		int y = mPos.y;
 		Color cellColor = GRAY;
 		cellColor.a = 128;
-		DrawRectangle(glm::min(rectBase.x, mPos.x) * renderScale, glm::min(rectBase.y, mPos.y) * renderScale + topBorder, abs(mPos.x - rectBase.x) * renderScale, abs(mPos.y - rectBase.y) * renderScale, cellColor);
+		DrawRectangle(glm::min(rectBase.x, mPos.x) * renderScale, glm::min(rectBase.y, mPos.y) * renderScale + buttonHeight, abs(mPos.x - rectBase.x) * renderScale, abs(mPos.y - rectBase.y) * renderScale, cellColor);
 	}
 
 	for (int x = 0; x < sizeX; x += 2)
@@ -108,8 +108,8 @@ void FluidCreate::draw()
 			if (flowSource[x][y] != glm::dvec2{ 0,0 })
 			{
 				glm::dvec2 velocity = flowSource[x][y];
-				DrawLine(x * renderScale + renderScale / 2.0, y * renderScale + renderScale / 2.0 + topBorder, (x + velocity.x * 0.125) * renderScale + renderScale / 2.0, (y + velocity.y * 0.125) * renderScale + renderScale / 2.0 + topBorder, WHITE);
-				DrawCircle((x + velocity.x * 0.125) * renderScale + renderScale / 2.0, (y + velocity.y * 0.125) * renderScale + renderScale / 2.0 + topBorder, 2, WHITE);
+				DrawLine(x * renderScale + renderScale / 2.0, y * renderScale + renderScale / 2.0 + buttonHeight, (x + velocity.x * 0.125) * renderScale + renderScale / 2.0, (y + velocity.y * 0.125) * renderScale + renderScale / 2.0 + buttonHeight, WHITE);
+				DrawCircle((x + velocity.x * 0.125) * renderScale + renderScale / 2.0, (y + velocity.y * 0.125) * renderScale + renderScale / 2.0 + buttonHeight, 2, WHITE);
 			}
 		}
 	}
@@ -119,7 +119,7 @@ void FluidCreate::draw()
 	if (drawType == 2) textToDraw = "Draw Mode: Flow Source\nSource Velocity: " + glm::to_string(drawVel);
 	if (drawType == 3) textToDraw = "Draw Mode: Dye Source\nSource Color(rgba): " + glm::to_string(drawColor);
 
-	DrawText(textToDraw.c_str(), renderScale * 2, renderScale * 2 + topBorder, 12, GREEN);
+	DrawText(textToDraw.c_str(), renderScale * 2, renderScale * 2 + buttonHeight, 12, GREEN);
 }
 
 void FluidCreate::input()
@@ -127,7 +127,7 @@ void FluidCreate::input()
 	glm::dvec2 mPos = mouseToGrid(GetMousePosition());
 	double x = mPos.x;
 	double y = mPos.y;
-	if (!(x < 1 || x > sizeX - 1 || y < 1 || y > sizeY - 1))
+	if (!(x < 0 || x > sizeX - 1 || y < 0 || y > sizeY - 1))
 	{
 		if (rectMode)
 		{
@@ -139,7 +139,6 @@ void FluidCreate::input()
 					drawingRect = 1;
 					rectButton = MOUSE_BUTTON_LEFT;
 				}
-				return;
 			}
 			else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
 			{
@@ -149,7 +148,6 @@ void FluidCreate::input()
 					drawingRect = 1;
 					rectButton = MOUSE_BUTTON_RIGHT;
 				}
-				return;
 			}
 			else if (drawingRect)
 			{
@@ -194,7 +192,6 @@ void FluidCreate::input()
 						}
 					}
 				}
-				return;
 			}
 		}
 		else
@@ -251,17 +248,27 @@ void FluidCreate::input()
 		if (IsKeyPressed(KEY_A)) drawColor.a = 1 - drawColor.a;
 	}
 
+	if (GuiButton(Rectangle{ 0, 0, buttonWidth, buttonHeight }, "#131#Run")) exitWindow = 1;
+	if (GuiButton(Rectangle{ buttonWidth, 0, buttonWidth, buttonHeight }, "#2#Save"))
+	{
+		FluidInfo info(*this);
+		info.saveTo("setup.sim");
+	}
+
 	if (IsKeyPressed(KEY_ONE)) drawType = 1;
+	if (GuiButton(Rectangle{ buttonWidth * 3, 0, buttonWidth, buttonHeight }, "#79#Obstacle")) drawType = 1;
 	if (IsKeyPressed(KEY_TWO)) drawType = 2;
+	if (GuiButton(Rectangle{ buttonWidth * 4, 0, buttonWidth, buttonHeight }, "#62#Flow Source")) drawType = 2;
 	if (IsKeyPressed(KEY_THREE)) drawType = 3;
+	if (GuiButton(Rectangle{ buttonWidth * 5, 0, buttonWidth, buttonHeight }, "#26#Dye Source")) drawType = 3;
 
 	if (IsKeyPressed(KEY_SPACE)) rectMode = !rectMode;
-	if (GuiButton(Rectangle{ 0, 0, 120, 24 }, "Run")) exitWindow = 1;
+	if (GuiButton(Rectangle{ buttonWidth * 6, 0, buttonWidth, buttonHeight }, "#109#Rectangle Mode")) rectMode = !rectMode;
 }
 
 glm::dvec2 FluidCreate::mouseToGrid(Vector2 mousePos)
 {
-	glm::dvec2 gridPos = { mousePos.x / renderScale, (mousePos.y - topBorder) / renderScale};
+	glm::dvec2 gridPos = { mousePos.x / renderScale, (mousePos.y - buttonHeight) / renderScale};
 	return gridPos;
 }
 
