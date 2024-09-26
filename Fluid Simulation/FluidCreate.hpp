@@ -38,6 +38,10 @@ private:
 
 	bool loading = 0;
 	bool saving = 0;
+	bool newing = 0;
+	int newX = 100;
+	int newY = 100;
+	int newRenderScale = 4;
 	std::string fileToLoad = "";
 	char textBoxText[256];
 	bool textBoxEditMode = 0;

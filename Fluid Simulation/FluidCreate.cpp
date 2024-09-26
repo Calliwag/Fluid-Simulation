@@ -80,6 +80,16 @@ void FluidCreate::createLoop()
 		// Get input
 		if (!(loading || saving)) input();
 
+		// Making new file
+		if (newing)
+		{
+			glm::dvec2 origin = { sizeX * renderScale / 2 - 250, sizeY * renderScale / 2 + buttonHeight - 100 };
+			GuiPanel(Rectangle{ (float)origin.x,(float)origin.y,500,100 }, "New File: Enter horizontal size, vertical size, and render scale");
+			GuiValueBox(Rectangle{ (float)origin.x + 50,(float)origin.y + 40,66,20 }, NULL, &newX, 1, 10000, 1);
+			GuiValueBox(Rectangle{ (float)origin.x + 216,(float)origin.y + 40,66,20 }, NULL, &newY, 1, 10000, 1);
+			GuiValueBox(Rectangle{ (float)origin.x + 382,(float)origin.y + 40,66,20 }, NULL, &newRenderScale, 1, 100, 1);
+		}
+
 		// Loading files
 		if (fileDialogState.SelectFilePressed)
 		{
@@ -318,24 +328,19 @@ void FluidCreate::input()
 	}
 
 	if (GuiButton(Rectangle{ 0, 0, buttonWidth, buttonHeight }, "#131#Run")) exitWindow = 1;
-	if (GuiButton(Rectangle{ buttonWidth, 0, buttonWidth, buttonHeight }, "#2#Save As"))
-	{
-		saving = 1;
-	}
-	if (GuiButton(Rectangle{ buttonWidth * 2, 0, buttonWidth, buttonHeight }, "Load"))
-	{
-		loading = 1;
-	}
+	if (GuiButton(Rectangle{ buttonWidth, 0, buttonWidth, buttonHeight }, "#8#New")) newing = 1;
+	if (GuiButton(Rectangle{ buttonWidth * 2, 0, buttonWidth, buttonHeight }, "#1#Open")) loading = 1;
+	if (GuiButton(Rectangle{ buttonWidth * 3, 0, buttonWidth, buttonHeight }, "#2#Save As")) saving = 1;
 
 	if (IsKeyPressed(KEY_ONE)) drawType = 1;
-	if (GuiButton(Rectangle{ buttonWidth * 3, 0, buttonWidth, buttonHeight }, "#79#Obstacle")) drawType = 1;
+	if (GuiButton(Rectangle{ buttonWidth * 4, 0, buttonWidth, buttonHeight }, "#79#Obstacle")) drawType = 1;
 	if (IsKeyPressed(KEY_TWO)) drawType = 2;
-	if (GuiButton(Rectangle{ buttonWidth * 4, 0, buttonWidth, buttonHeight }, "#62#Flow Source")) drawType = 2;
+	if (GuiButton(Rectangle{ buttonWidth * 5, 0, buttonWidth, buttonHeight }, "#62#Flow Source")) drawType = 2;
 	if (IsKeyPressed(KEY_THREE)) drawType = 3;
-	if (GuiButton(Rectangle{ buttonWidth * 5, 0, buttonWidth, buttonHeight }, "#26#Dye Source")) drawType = 3;
+	if (GuiButton(Rectangle{ buttonWidth * 6, 0, buttonWidth, buttonHeight }, "#26#Dye Source")) drawType = 3;
 
 	if (IsKeyPressed(KEY_SPACE)) rectMode = !rectMode;
-	if (GuiButton(Rectangle{ buttonWidth * 6, 0, buttonWidth, buttonHeight }, "#109#Rectangle Mode")) rectMode = !rectMode;
+	if (GuiButton(Rectangle{ buttonWidth * 7, 0, buttonWidth, buttonHeight }, "#109#Rectangle Mode")) rectMode = !rectMode;
 }
 
 glm::dvec2 FluidCreate::mouseToGrid(Vector2 mousePos)
