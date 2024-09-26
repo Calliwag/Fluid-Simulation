@@ -78,9 +78,9 @@ void FluidCreate::createLoop()
 		}
 
 		// Get input
-		if(!fileDialogState.windowActive) input();
+		if (!(loading || saving)) input();
 
-		// Loading stuff
+		// Loading files
 		if (fileDialogState.SelectFilePressed)
 		{
 			// Load sim file
@@ -88,17 +88,40 @@ void FluidCreate::createLoop()
 			{
 				FluidInfo info(fileDialogState.fileNameText);
 				loadInfo(info);
+				loading = 0;
 			}
-
 			fileDialogState.SelectFilePressed = false;
 		}
 		if (fileDialogState.windowActive) GuiLock();
-		if (GuiButton(Rectangle{ buttonWidth * 2, 0, buttonWidth, buttonHeight }, "#1#Load"))
+		if (loading)
 		{
-			fileDialogState.windowActive = true;;
+			fileDialogState.windowActive = true;
 		}
 		GuiUnlock();
 		GuiWindowFileDialog(&fileDialogState);
+		if (!fileDialogState.windowActive)
+		{
+			loading = 0;
+		}
+
+		//Saving files
+		if (saving)
+		{
+			int result = GuiTextInputBox({ (float)sizeX * renderScale / 2, (float)sizeY * renderScale / 2 + buttonHeight, 500, 200 }, "Save File As", "Input File Name", "Cancel;Save", textBoxText, 64, NULL);
+			if (result == 0 || result == 1)
+			{
+				saving = 0;
+			}
+			if (result == 2)
+			{
+				if (IsFileExtension(textBoxText, ".sim"))
+				{
+					FluidInfo info(*this);
+					info.saveTo(textBoxText);
+					saving = 0;
+				}
+			}
+		}
 
 		window.EndDrawing();
 	}
@@ -295,10 +318,9 @@ void FluidCreate::input()
 	}
 
 	if (GuiButton(Rectangle{ 0, 0, buttonWidth, buttonHeight }, "#131#Run")) exitWindow = 1;
-	if (GuiButton(Rectangle{ buttonWidth, 0, buttonWidth, buttonHeight }, "#2#Save"))
+	if (GuiButton(Rectangle{ buttonWidth, 0, buttonWidth, buttonHeight }, "#2#Save As"))
 	{
-		FluidInfo info(*this);
-		info.saveTo("setup.sim");
+		saving = 1;
 	}
 	if (GuiButton(Rectangle{ buttonWidth * 2, 0, buttonWidth, buttonHeight }, "Load"))
 	{

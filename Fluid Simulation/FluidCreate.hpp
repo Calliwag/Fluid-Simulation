@@ -37,7 +37,10 @@ private:
 	float buttonWidth = 100;
 
 	bool loading = 0;
+	bool saving = 0;
 	std::string fileToLoad = "";
+	char textBoxText[256];
+	bool textBoxEditMode = 0;
 
 public:
 	FluidCreate(int _sizeX, int _sizeY, int _renderScale);

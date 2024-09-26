@@ -13,15 +13,6 @@ int main(int argc, char* argv[])
 
 	argparse::ArgumentParser program("FluidSimulation");
 
-	program.add_argument("--SourceImage")
-		.help("Specify name of image source file (including file extension).");
-
-	program.add_argument("--DyeSourceImage")
-		.help("Image to determine dye sources. Not strictly needed for dye mode.");
-
-	program.add_argument("--SimFile")
-		.help("Specify name of input '.sim' file.");
-
 	program.add_argument("--Vorticity")
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
@@ -72,35 +63,10 @@ int main(int argc, char* argv[])
 
 	// Construct fluid(shared_ptr)
 	std::shared_ptr<Fluid> fluid;
-	if (program.is_used("--SourceImage"))
-	{
-		Image inputImage = LoadImage(program.get<>("--SourceImage").c_str());
-		if (program.is_used("--DyeSourceImage"))
-		{
-			Image dyeInputImage = LoadImage(program.get<>("--DyeSourceImage").c_str());
-			fluid = std::make_shared<Fluid>(inputImage, dyeInputImage,
-				program.get<double>("--Vorticity"),
-				program.get<int>("--RelaxationSteps"));
-		}
-		else
-		{
-			fluid = std::make_shared<Fluid>(inputImage, glm::dvec4{ 1,0,0,1 },
-				program.get<double>("--Vorticity"),
-				program.get<int>("--RelaxationSteps"));
-		}
-	}
-	if (program.is_used("--SimFile"))
-	{
-		FluidInfo info(program.get<>("--SimFile"));
-		fluid = std::make_shared<Fluid>(info, program.get<double>("--Vorticity"), program.get<int>("--RelaxationSteps"));
-	}
-	else
-	{
-		FluidCreate create(200, 75, 6);
-		create.createLoop();
-		FluidInfo info(create);
-		fluid = std::make_shared<Fluid>(info, program.get<double>("--Vorticity"), program.get<int>("--RelaxationSteps"));
-	}
+	FluidCreate create(200, 75, 6);
+	create.createLoop();
+	FluidInfo info(create);
+	fluid = std::make_shared<Fluid>(info, program.get<double>("--Vorticity"), program.get<int>("--RelaxationSteps"));
 
 	//Construct fluidRender
 	FluidRender fluidRender(fluid, 
