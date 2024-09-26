@@ -1,3 +1,4 @@
+#pragma once
 #include "Fluid.hpp"
 #include "FluidRender.hpp"
 #include "FluidCreate.hpp"

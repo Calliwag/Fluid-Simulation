@@ -1,8 +1,13 @@
 #include "FluidCreate.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/ext.hpp"
+
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+
+#undef RAYGUI_IMPLEMENTATION
+#define GUI_WINDOW_FILE_DIALOG_IMPLEMENTATION
+#include "gui_window_file_dialog.h"
 
 FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 {
@@ -34,8 +39,31 @@ FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 	drawColor = { 1,0,0,1 };
 }
 
+void FluidCreate::loadInfo(FluidInfo info)
+{
+	sizeX = info.sizeX;
+	sizeY = info.sizeY;
+	renderScale = info.renderScale;
+
+	fluidField = info.fluidField;
+	dyeSource = info.dyeSource;
+	flowSource = info.flowSource;
+	baseDye = info.baseDye;
+	barrierColor = info.barrierColor;
+
+	int renderX = sizeX * renderScale;
+	int renderY = sizeY * renderScale;
+	SetWindowSize(renderX, renderY + buttonHeight);
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2 - buttonHeight);
+
+	drawType = 1;
+	drawVel = { 0,0 };
+	drawColor = { 1,0,0,1 };
+}
+
 void FluidCreate::createLoop()
 {
+	GuiWindowFileDialogState fileDialogState = InitGuiWindowFileDialog(GetWorkingDirectory());
 	while (!exitWindow)
 	{
 		// Draw to screen
@@ -49,8 +77,28 @@ void FluidCreate::createLoop()
 			std::cout << "Fluid creation closed by user\n";
 		}
 
-		// Get input, draw to grids
-		input();
+		// Get input
+		if(!fileDialogState.windowActive) input();
+
+		// Loading stuff
+		if (fileDialogState.SelectFilePressed)
+		{
+			// Load sim file
+			if (IsFileExtension(fileDialogState.fileNameText, ".sim"))
+			{
+				FluidInfo info(fileDialogState.fileNameText);
+				loadInfo(info);
+			}
+
+			fileDialogState.SelectFilePressed = false;
+		}
+		if (fileDialogState.windowActive) GuiLock();
+		if (GuiButton(Rectangle{ buttonWidth * 2, 0, buttonWidth, buttonHeight }, "#1#Load"))
+		{
+			fileDialogState.windowActive = true;;
+		}
+		GuiUnlock();
+		GuiWindowFileDialog(&fileDialogState);
 
 		window.EndDrawing();
 	}
@@ -72,22 +120,20 @@ void FluidCreate::draw()
 				cellColor.b = barrierColor.z * 255;
 				cellColor.a = barrierColor.w * 255;
 			}
-			else
+			else if (drawType == 3)
 			{
 				cellColor.r = dyeSource[x][y].x * 255;
 				cellColor.g = dyeSource[x][y].y * 255;
 				cellColor.b = dyeSource[x][y].z * 255;
 				cellColor.a = dyeSource[x][y].w * 255;
 			}
-
-			DrawRectangle(x * renderScale, y * renderScale + buttonHeight, renderScale, renderScale, cellColor);
-
-			if (flowSource[x][y] != glm::dvec2{ 0,0 } && drawType != 3)
+			else if (flowSource[x][y] != glm::dvec2{ 0,0 } && drawType != 3)
 			{
 				cellColor = GREEN;
 				cellColor.a = 128;
-				DrawRectangle(x * renderScale, y * renderScale + buttonHeight, renderScale, renderScale, cellColor);
 			}
+
+			DrawRectangle(x * renderScale, y * renderScale + buttonHeight, renderScale, renderScale, cellColor);
 		}
 	}
 
@@ -253,6 +299,10 @@ void FluidCreate::input()
 	{
 		FluidInfo info(*this);
 		info.saveTo("setup.sim");
+	}
+	if (GuiButton(Rectangle{ buttonWidth * 2, 0, buttonWidth, buttonHeight }, "Load"))
+	{
+		loading = 1;
 	}
 
 	if (IsKeyPressed(KEY_ONE)) drawType = 1;

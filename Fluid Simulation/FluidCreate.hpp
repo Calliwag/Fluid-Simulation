@@ -3,9 +3,10 @@
 #include <iostream>
 #include <fstream>
 #include "glm/glm.hpp"
-#include "raylib-cpp.hpp"
 #include "Grid.hpp"
+#include "raylib-cpp.hpp"
 
+struct FluidInfo;
 
 class FluidCreate
 {
@@ -35,8 +36,12 @@ private:
 	float buttonHeight = 24;
 	float buttonWidth = 100;
 
+	bool loading = 0;
+	std::string fileToLoad = "";
+
 public:
 	FluidCreate(int _sizeX, int _sizeY, int _renderScale);
+	void loadInfo(FluidInfo info);
 	void createLoop();
 	void draw();
 	void input();
