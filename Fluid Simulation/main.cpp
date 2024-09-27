@@ -12,7 +12,6 @@ int main(int argc, char* argv[])
 	*/
 
 	argparse::ArgumentParser program("FluidSimulation");
-
 	program.add_argument("--Vorticity")
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
