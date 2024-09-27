@@ -32,12 +32,7 @@ int main(int argc, char* argv[])
 		.help("Min and max values for rendering pressure/vorticity. Does nothing if DrawMode is set to 0.")
 		.nargs(2)
 		.scan<'i', int>()
-		.default_value(std::vector<int>{0, 0});
-
-	program.add_argument("--RenderScale")
-		.help("What scale the simulation is rendered at.")
-		.scan<'i', int>()
-		.default_value(1);
+		.default_value(std::vector<int>{-10, 10});
 
 	program.add_argument("--DrawLines")
 		.help("Should velocity lines be rendered and at what size (boolean, int).")
@@ -70,8 +65,8 @@ int main(int argc, char* argv[])
 
 	//Construct fluidRender
 	FluidRender fluidRender(fluid, 
-		glm::dvec4{0,0,0,1}, glm::dvec4{1,1,1,1}, 
-		program.get<int>("--RenderScale"), 
+		info.baseDye, info.barrierColor, 
+		info.renderScale, 
 		program.get<int>("--MaxFrames"), 
 		program.get<int>("--DrawMode"), 
 		glm::dvec2{ program.get<std::vector<int>>("--DrawMinMax")[0],program.get<std::vector<int>>("--DrawMinMax")[1] },

@@ -14,7 +14,7 @@ FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 	sizeX = _sizeX;
 	sizeY = _sizeY;
 	renderScale = _renderScale;
-
+	
 	dyeSource.resize(sizeX, sizeY, baseDye);
 	fluidField.resize(sizeX, sizeY, 0);
 	flowSource.resize(sizeX, sizeX, glm::dvec2{ 0,0 });
@@ -31,8 +31,8 @@ FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 	int renderX = sizeX * renderScale;
 	int renderY = sizeY * renderScale;
 	SetTraceLogLevel(5);
-	raylib::Window window(renderX, renderY + buttonHeight, "Fluid Simulation");
-	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2 - buttonHeight);
+	raylib::Window window((int)renderX, (int)renderY + buttonHeight, "Fluid Simulation");
+	SetWindowPosition(GetMonitorWidth(GetCurrentMonitor()) / 2 - renderX / 2, GetMonitorHeight(GetCurrentMonitor()) / 2 - renderY / 2 - (int)buttonHeight);
 
 	drawType = 1;
 	drawVel = { 0,0 };
@@ -83,7 +83,6 @@ void FluidCreate::createLoop()
 		{
 			Color BG = WHITE;
 			BG.a = 0.5 * 255;
-			Draw
 		}
 
 		// Making new file
@@ -192,7 +191,7 @@ void FluidCreate::draw()
 				cellColor.a = 128;
 			}
 
-			DrawRectangle(x * renderScale, y * renderScale + buttonHeight, renderScale, renderScale, cellColor);
+			DrawRectangle(x * renderScale, y * renderScale + (int)buttonHeight, renderScale, renderScale, cellColor);
 		}
 	}
 
@@ -203,7 +202,7 @@ void FluidCreate::draw()
 		int y = mPos.y;
 		Color cellColor = GRAY;
 		cellColor.a = 128;
-		DrawRectangle(glm::min(rectBase.x, mPos.x) * renderScale, glm::min(rectBase.y, mPos.y) * renderScale + buttonHeight, abs(mPos.x - rectBase.x) * renderScale, abs(mPos.y - rectBase.y) * renderScale, cellColor);
+		DrawRectangle(int(floor(glm::min(rectBase.x, mPos.x))) * renderScale, int(floor(glm::min(rectBase.y, mPos.y))) * renderScale + buttonHeight, int(ceil(abs(mPos.x - rectBase.x))) * renderScale, int(ceil(abs(mPos.y - rectBase.y))) * renderScale, cellColor);
 	}
 
 	for (int x = 0; x < sizeX; x += 2)

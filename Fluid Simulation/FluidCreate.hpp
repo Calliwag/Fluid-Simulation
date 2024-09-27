@@ -6,7 +6,7 @@
 #include "Grid.hpp"
 #include "raylib-cpp.hpp"
 
-struct FluidInfo;
+class FluidInfo;
 
 class FluidCreate
 {
@@ -63,7 +63,7 @@ public:
 
 };
 
-struct FluidInfo
+class FluidInfo
 {
 public:
 	uint16_t sizeX;

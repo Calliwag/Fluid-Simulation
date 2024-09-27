@@ -263,7 +263,7 @@ void Fluid::updateFlowSources()
 // Updating all sources of dye
 void Fluid::updateDyeSources()
 {
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 0; x < sizeX; x++)
 	{
 		for (int y = 0; y < sizeY; y++)
@@ -279,7 +279,7 @@ void Fluid::updateDyeSources()
 //Updating flow and curl grid
 void Fluid::updateFlowAndCurl()
 {
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -297,7 +297,7 @@ void Fluid::updateFlowAndCurl()
 // Decaying dye with 'decayValue'
 void Fluid::decayDye()
 {
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -313,7 +313,7 @@ void Fluid::decayDye()
 // Diffusing dye with 'diffuseValue'
 void Fluid::diffuseDye()
 {
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -336,7 +336,7 @@ void Fluid::diffuseDye()
 // Solve incompressibility of the fluid
 void Fluid::solveIncompressibility()
 {
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 0; x < sizeX; x++)
 	{
 		for (int y = 0; y < sizeY; y++)
@@ -394,7 +394,7 @@ void Fluid::advectVelocity()
 {
 	Grid<double> newFlowX = flowX;
 	Grid<double> newFlowY = flowY;
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 1; x < sizeX; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -429,7 +429,7 @@ void Fluid::advectVelocity()
 			newFlowX[x][y] = sourceFlow;
 		}
 	}
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY; y++)
@@ -473,7 +473,7 @@ void Fluid::advectVelocity()
 void Fluid::advectDye()
 {
 	Grid<glm::dvec4> newDye = dye;
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 1; x < sizeX - 1; x++)
 	{
 		for (int y = 1; y < sizeY - 1; y++)
@@ -525,7 +525,7 @@ void Fluid::vorticityConfinement()
 {
 	Grid<double> newFlowX = flowX;
 	Grid<double> newFlowY = flowY;
-#pragma omp parallel for num_threads(12) collapse(2)
+#pragma omp parallel for num_threads(12)
 	for (int x = 3; x < sizeX - 3; x++)
 	{
 		for (int y = 3; y < sizeY - 3; y++)
