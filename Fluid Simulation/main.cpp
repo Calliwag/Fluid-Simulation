@@ -7,7 +7,7 @@
 int main(int argc, char* argv[])
 {
 	/*
-	Basic Commands ".\Fluid Simulation.exe" Input.png --DyeSourceImage DyeInput.png --DrawMode 0 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
+	Basic Commands ".\Fluid Simulation.exe" --DrawMode 0 --DrawMinMax -10 10 --DrawLines 1 4 --RenderScale 6
 	Additional Commands --MaxFrames 3600
 	*/
 
@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
 		.default_value(0.0);
-
+	
 	program.add_argument("--RelaxationSteps")
 		.help("Set the number of relaxation steps for solving incompressibility. 25 recommended.")
 		.scan<'i', int>()
