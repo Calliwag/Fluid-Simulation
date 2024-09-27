@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
 		.default_value(0.0);
-	// beep boop
+	
 	program.add_argument("--RelaxationSteps")
 		.help("Set the number of relaxation steps for solving incompressibility. 25 recommended.")
 		.scan<'i', int>()
