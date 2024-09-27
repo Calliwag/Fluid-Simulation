@@ -39,9 +39,14 @@ private:
 	bool loading = 0;
 	bool saving = 0;
 	bool newing = 0;
+
 	int newX = 100;
 	int newY = 100;
 	int newRenderScale = 4;
+	bool editnX = 0;
+	bool editnY = 0;
+	bool editRS = 0;
+
 	std::string fileToLoad = "";
 	char textBoxText[256];
 	bool textBoxEditMode = 0;
@@ -74,6 +79,9 @@ public:
 public:
 	// Construct from FluidCreate
 	FluidInfo(FluidCreate data);
+
+	// Construct from sizeX, sizeY, renderScale
+	FluidInfo(int _sizeX, int _sizeY, int _renderScale);
 
 	// Load from file
 	FluidInfo(std::string fileName);

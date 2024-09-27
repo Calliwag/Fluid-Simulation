@@ -78,16 +78,42 @@ void FluidCreate::createLoop()
 		}
 
 		// Get input
-		if (!(loading || saving)) input();
+		if (!(loading || saving || newing)) input();
+		else
+		{
+			Color BG = WHITE;
+			BG.a = 0.5 * 255;
+			Draw
+		}
 
 		// Making new file
 		if (newing)
 		{
 			glm::dvec2 origin = { sizeX * renderScale / 2 - 250, sizeY * renderScale / 2 + buttonHeight - 100 };
 			GuiPanel(Rectangle{ (float)origin.x,(float)origin.y,500,100 }, "New File: Enter horizontal size, vertical size, and render scale");
-			GuiValueBox(Rectangle{ (float)origin.x + 50,(float)origin.y + 40,66,20 }, NULL, &newX, 1, 10000, 1);
-			GuiValueBox(Rectangle{ (float)origin.x + 216,(float)origin.y + 40,66,20 }, NULL, &newY, 1, 10000, 1);
-			GuiValueBox(Rectangle{ (float)origin.x + 382,(float)origin.y + 40,66,20 }, NULL, &newRenderScale, 1, 100, 1);
+
+			// Edit sizeX
+			if (GuiButton(Rectangle{ (float)origin.x + 50,(float)origin.y + 40,66,20 }, NULL)) { editnX = 1; editnY = 0; editRS = 0; }
+			GuiValueBox(Rectangle{ (float)origin.x + 50,(float)origin.y + 40,66,20 }, NULL, &newX, 1, 10000, editnX);
+
+			// Edit sizeY
+			if (GuiButton(Rectangle{ (float)origin.x + 216,(float)origin.y + 40,66,20 }, NULL)) { editnX = 0; editnY = 1; editRS = 0; }
+			GuiValueBox(Rectangle{ (float)origin.x + 216,(float)origin.y + 40,66,20 }, NULL, &newY, 1, 10000, editnY);
+
+			// Edit renderScale
+			if (GuiButton(Rectangle{ (float)origin.x + 382,(float)origin.y + 40,66,20 }, NULL)) { editnX = 0; editnY = 0; editRS = 1; }
+			GuiValueBox(Rectangle{ (float)origin.x + 382,(float)origin.y + 40,66,20 }, NULL, &newRenderScale, 1, 100, editRS);
+
+			// Cancel
+			if (GuiButton(Rectangle{ (float)origin.x + 100,(float)origin.y + 70,100,20 }, "Cancel")) newing = 0;
+
+			// Confirm
+			if (GuiButton(Rectangle{ (float)origin.x + 300,(float)origin.y + 70,100,20 }, "Confirm"))
+			{
+				newing = 0;
+				FluidInfo info(newX, newY, newRenderScale);
+				loadInfo(info);
+			}
 		}
 
 		// Loading files
@@ -360,6 +386,30 @@ FluidInfo::FluidInfo(FluidCreate data)
 	flowSource = data.flowSource;
 	baseDye = data.baseDye;
 	barrierColor = data.barrierColor;
+}
+
+FluidInfo::FluidInfo(int _sizeX, int _sizeY, int _renderScale)
+{
+	baseDye = {0,0,0,1};
+	barrierColor = {1,1,1,1};
+
+	sizeX = _sizeX;
+	sizeY = _sizeY;
+	renderScale = _renderScale;
+
+	dyeSource.resize(sizeX, sizeY, baseDye);
+	fluidField.resize(sizeX, sizeY);
+
+	// Set only non-boundary cells to be fluid
+	for (int x = 1; x < sizeX - 1; x++)
+	{
+		for (int y = 1; y < sizeY - 1; y++)
+		{
+			fluidField[x][y] = 1;
+		}
+	}
+
+	flowSource.resize(sizeX, sizeY);
 }
 
 FluidInfo::FluidInfo(std::string fileName)
