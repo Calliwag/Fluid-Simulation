@@ -219,6 +219,7 @@ void Fluid::updateLoop()
 		auto ms_int = duration_cast<std::chrono::milliseconds>(t2 - t1);
 		cout << "Frame " << frame << ", at " << int(1000.0 / ms_int.count()) << " fps\n";
 	}
+	cout << "Update thread joining\n";
 }
 
 void Fluid::update()

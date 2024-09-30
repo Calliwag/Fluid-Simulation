@@ -202,7 +202,11 @@ void FluidCreate::draw()
 		int y = mPos.y;
 		Color cellColor = GRAY;
 		cellColor.a = 128;
-		DrawRectangle(int(floor(glm::min(rectBase.x, mPos.x))) * renderScale, int(floor(glm::min(rectBase.y, mPos.y))) * renderScale + buttonHeight, int(ceil(abs(mPos.x - rectBase.x))) * renderScale, int(ceil(abs(mPos.y - rectBase.y))) * renderScale, cellColor);
+		int baseX = floor(glm::min(rectBase.x, mPos.x)) * renderScale;
+		int baseY = floor(glm::min(rectBase.y, mPos.y)) * renderScale + buttonHeight;
+		int widthX = (ceil(glm::max(rectBase.x, mPos.x)) - floor(glm::min(rectBase.x, mPos.x))) * renderScale;
+		int widthY = (ceil(glm::max(rectBase.y, mPos.y)) - floor(glm::min(rectBase.y, mPos.y))) * renderScale;
+		DrawRectangle( baseX, baseY, widthX, widthY, cellColor);
 	}
 
 	for (int x = 0; x < sizeX; x += 2)

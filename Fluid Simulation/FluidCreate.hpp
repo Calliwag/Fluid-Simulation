@@ -66,15 +66,27 @@ public:
 class FluidInfo
 {
 public:
+	// Size of simulation
 	uint16_t sizeX;
 	uint16_t sizeY;
-	uint16_t renderScale;
 
+	// Render scale
+	uint16_t renderScale;
+	
+	// Grids
 	Grid<uint8_t> fluidField;
 	Grid<glm::dvec4> dyeSource;
 	Grid<glm::dvec2> flowSource;
+
+	// Colors
 	glm::dvec4 baseDye;
 	glm::dvec4 barrierColor;
+
+	// Vorticity
+	double vorticity;
+
+	// Relaxation steps
+	int relaxationSteps;
 
 public:
 	// Construct from FluidCreate
