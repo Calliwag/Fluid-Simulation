@@ -17,6 +17,10 @@ public:
 	Grid <glm::dvec2> flowSource = {};
 	Grid<uint8_t> fluidField = {};
 
+	// Density/ Compressibility
+	Grid<double> density = {}; // Check this out https://www.clawpack.org/riemann_book/html/Euler.html
+	double baseDensity = 0.5;
+
 	// Dye Related
 	glm::dvec4 baseDye = { 0,0,0,1 };
 	glm::dvec4 barrierColor = { 1,1,1,1 };

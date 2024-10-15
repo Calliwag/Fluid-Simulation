@@ -191,6 +191,7 @@ Fluid::Fluid(FluidInfo info, double _vorticity, int _relaxationSteps)
 	fluidField = info.fluidField;
 	flowSource = info.flowSource;
 
+	density.resize(sizeX, sizeY, baseDensity);
 	dye.resize(sizeX, sizeY, baseDye);
 	pressureGrid.resize(sizeX, sizeY);
 	flowGrid.resize(sizeX, sizeY);
