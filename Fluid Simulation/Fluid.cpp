@@ -391,6 +391,45 @@ void Fluid::solveIncompressibilityAt(int x, int y)
 	pressureGrid[x][y] -= divergence / (fluidCount * timeStep);
 }
 
+void Fluid::solveCompressibility()
+{
+#pragma omp parallel for num_threads(12)
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			pressureGrid[x][y] = 0;
+		}
+	}
+	for (int i = 0; i < relaxationSteps; i++)
+	{
+		updateFlowSources();
+#pragma omp parallel for num_threads(12)
+		for (int x = 1; x < sizeX - 1; x++)
+		{
+			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
+			{
+				if (fluidField[x][y] == 1)
+				{
+					solveCompressibilityAt(x, y);
+				}
+			}
+		}
+		updateFlowSources();
+#pragma omp parallel for num_threads(12)
+		for (int x = 1; x < sizeX - 1; x++)
+		{
+			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
+			{
+				if (fluidField[x][y] == 1)
+				{
+					solveCompressibilityAt(x, y);
+				}
+			}
+		}
+	}
+}
+
 // Advecting(moving) velocity
 void Fluid::advectVelocity()
 {

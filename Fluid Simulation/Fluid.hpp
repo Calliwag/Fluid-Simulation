@@ -42,6 +42,7 @@ public:
 	double timeStep = 0.1;
 	double vorticity;
 	int relaxationSteps;
+	bool compressible = true;
 
 	// Threading for drawing
 	bool updateThreadShouldJoin;
@@ -52,14 +53,6 @@ public:
 	Fluid(Image layoutImage, glm::dvec4 dyeColor, double _vorticity, int _relaxationSteps);
 	Fluid(Image layoutImage, Image dyeImage, double _vorticity, int _relaxationSteps);
 	Fluid(FluidInfo info, double _vorticity, int _relaxationSteps);
-
-	// Main Loop
-	void mainLoop();
-
-	// Drawing
-	void draw();
-
-	void storeScreenImage();
 
 	// Simulation
 	// Update loop
@@ -80,6 +73,10 @@ public:
 	// Solve incompressibility
 	void solveIncompressibility();
 	void solveIncompressibilityAt(int x, int y);
+
+	// Solve compressibility
+	void solveCompressibility();
+	void solveCompressibilityAt(int x, int y);
 
 	// Advection
 	void advectVelocity();
