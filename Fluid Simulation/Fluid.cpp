@@ -394,18 +394,23 @@ void Fluid::solveIncompressibilityAt(int x, int y)
 void Fluid::solveCompressibility()
 {
 #pragma omp parallel for num_threads(12)
-	for (int x = 0; x < sizeX; x++)
+	for (int x = 2; x < sizeX - 2; x++)
 	{
-		for (int y = 0; y < sizeY; y++)
+		for (int y = 2; y < sizeY - 2; y++)
 		{
-			pressureGrid[x][y] = 0;
+			double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
+				(flowX[x][y] * fluidField[x - 1][y]) +
+				(flowY[x][y + 1] * fluidField[x][y + 1]) -
+				(flowY[x][y] * fluidField[x][y - 1]);
+			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+			density[x][y] = -divergence / (fluidCount * timeStep);
 		}
 	}
 	for (int i = 0; i < relaxationSteps; i++)
 	{
 		updateFlowSources();
 #pragma omp parallel for num_threads(12)
-		for (int x = 1; x < sizeX - 1; x++)
+		for (int x = 2; x < sizeX - 2; x++)
 		{
 			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
 			{
@@ -417,7 +422,7 @@ void Fluid::solveCompressibility()
 		}
 		updateFlowSources();
 #pragma omp parallel for num_threads(12)
-		for (int x = 1; x < sizeX - 1; x++)
+		for (int x = 2; x < sizeX - 2; x++)
 		{
 			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
 			{
@@ -428,6 +433,19 @@ void Fluid::solveCompressibility()
 			}
 		}
 	}
+}
+
+void Fluid::solveCompressibilityAt(int x, int y)
+{
+	double ptDensity = density[x][y];
+	double densityGradX = 0.5 * (density[x + 1][y] - density[x - 1][y]);
+	double deltaVelX = -densityGradX / ptDensity;
+	double densityGradY = 0.5 * (density[x + 1][y] - density[x - 1][y]);
+	double deltaVelY = -densityGradX / ptDensity;
+	flowX[x + 1][y] += deltaVelX;
+	flowX[x][y] += deltaVelX;
+	flowY[x][y + 1] += deltaVelY;
+	flowY[x][y] += deltaVelY;
 }
 
 // Advecting(moving) velocity
