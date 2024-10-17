@@ -81,6 +81,7 @@ public:
 	// Advection
 	void advectVelocity();
 	void advectDye();
+	void advectDensity();
 
 	// Vorticity Confinement
 	void vorticityConfinement();

@@ -228,8 +228,16 @@ void Fluid::update()
 	// Vorticity Confinement Step
 	vorticityConfinement();
 
-	// Solve Incompressibility
-	solveIncompressibility();
+	if (!compressible)
+	{
+		// Solve Incompressibility
+		solveIncompressibility();
+	}
+	else
+	{
+		// Solve compressibility
+		solveCompressibility();
+	}
 
 	// Advect Velocity
 	advectVelocity();
@@ -393,8 +401,8 @@ void Fluid::solveIncompressibilityAt(int x, int y)
 
 void Fluid::solveCompressibility()
 {
-#pragma omp parallel for num_threads(12)
-	for (int x = 2; x < sizeX - 2; x++)
+//#pragma omp parallel for num_threads(12)
+	/*for (int x = 2; x < sizeX - 2; x++)
 	{
 		for (int y = 2; y < sizeY - 2; y++)
 		{
@@ -405,10 +413,23 @@ void Fluid::solveCompressibility()
 			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
 			density[x][y] = -divergence / (fluidCount * timeStep);
 		}
-	}
+	}*/
 	for (int i = 0; i < relaxationSteps; i++)
 	{
+//#pragma omp parallel for num_threads(12)
 		updateFlowSources();
+		for (int x = 2; x < sizeX - 2; x++)
+		{
+			for (int y = 2; y < sizeY - 2; y++)
+			{
+				double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
+					(flowX[x][y] * fluidField[x - 1][y]) +
+					(flowY[x][y + 1] * fluidField[x][y + 1]) -
+					(flowY[x][y] * fluidField[x][y - 1]);
+				double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+				density[x][y] = -divergence / (fluidCount * timeStep);
+			}
+		}
 #pragma omp parallel for num_threads(12)
 		for (int x = 2; x < sizeX - 2; x++)
 		{
@@ -421,6 +442,18 @@ void Fluid::solveCompressibility()
 			}
 		}
 		updateFlowSources();
+		for (int x = 2; x < sizeX - 2; x++)
+		{
+			for (int y = 2; y < sizeY - 2; y++)
+			{
+				double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
+					(flowX[x][y] * fluidField[x - 1][y]) +
+					(flowY[x][y + 1] * fluidField[x][y + 1]) -
+					(flowY[x][y] * fluidField[x][y - 1]);
+				double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+				density[x][y] = -divergence / (fluidCount * timeStep);
+			}
+		}
 #pragma omp parallel for num_threads(12)
 		for (int x = 2; x < sizeX - 2; x++)
 		{
