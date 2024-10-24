@@ -42,7 +42,7 @@ public:
 	double timeStep = 0.1;
 	double vorticity;
 	int relaxationSteps;
-	bool compressible = true;
+	bool compressible = false;
 
 	// Threading for drawing
 	bool updateThreadShouldJoin;

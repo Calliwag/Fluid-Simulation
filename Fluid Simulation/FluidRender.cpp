@@ -130,7 +130,7 @@ void FluidRender::saveVideo()
 	int height = images[0].height;
 	cv::Size frameSize(images[0].width, images[0].height);
 	int codec = cv::VideoWriter::fourcc('H', '2', '6', '4');
-	cv::VideoWriter outputVideo("simulationOutput.mp4", codec, 60.0, frameSize);
+	cv::VideoWriter outputVideo("simulationOutput.mp4", codec, 200.0, frameSize);
 	for (int i = 0; i < images.size(); i++)
 	{
 		std::cout << "Writing frame " << i << " to video\n";
