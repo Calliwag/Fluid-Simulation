@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	program.add_argument("--RelaxationSteps")
 		.help("Set the number of relaxation steps for solving incompressibility. 25 recommended.")
 		.scan<'i', int>()
-		.default_value(25);
+		.default_value(50);
 
 	program.add_argument("--DrawMode")
 		.help("What the simulation renders: 0 = Dye, 1 = Pressure, 2 = Vorticity. --DrawMinMax should be used if --DrawMode is set to 1 or 2.")
