@@ -27,8 +27,8 @@ public:
 
 	Grid<glm::dvec4> dye = {};
 	Grid<glm::dvec4> dyeSource = {};
-	double decayValue = 0;
-	double diffuseValue = 0;
+	double decayValue = 0.0001;
+	double diffuseValue = 0.0;
 
 	// Temporary Value Storage Grids
 	Grid<glm::dvec2> flowGrid = {};

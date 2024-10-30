@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 	program.add_argument("--Vorticity")
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
-		.default_value(0.0);
+		.default_value(0.20);
 	
 	program.add_argument("--RelaxationSteps")
 		.help("Set the number of relaxation steps for solving incompressibility. 25 recommended.")
@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 		.help("Should velocity lines be rendered and at what size (boolean, int).")
 		.nargs(2)
 		.scan<'i', int>()
-		.default_value(std::vector<int>{0,1});
+		.default_value(std::vector<int>{0,4});
 
 	program.add_argument("--MaxFrames")
 		.help("How many frames should be saved as .png files")
