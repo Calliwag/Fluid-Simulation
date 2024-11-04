@@ -22,12 +22,12 @@ public:
 	double baseDensity = 0.5;
 
 	// Dye Related
-	glm::dvec4 baseDye = { 0,0,0,1 };
-	glm::dvec4 barrierColor = { 1,1,1,1 };
+	glm::dvec4 baseDye = {1,1,1,1};
+	glm::dvec4 barrierColor = {1,1,1,1};
 
 	Grid<glm::dvec4> dye = {};
 	Grid<glm::dvec4> dyeSource = {};
-	double decayValue = 0.0001;
+	double decayValue = .0005;
 	double diffuseValue = 0.0;
 
 	// Temporary Value Storage Grids

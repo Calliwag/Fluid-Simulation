@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RayGUI;C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RaylibCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RayGUI\examples\custom_file_dialog;C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RaylibCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,7 +122,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RayGUI;C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RaylibCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RayGUI\examples\custom_file_dialog;C:\Users\Student\source\repos\Fluid-Simulation\Fluid Simulation\RaylibCPP\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

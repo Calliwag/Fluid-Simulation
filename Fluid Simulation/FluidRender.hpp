@@ -9,8 +9,8 @@ private:
 	// Fluid
 	std::shared_ptr<Fluid> fluid;
 
-	glm::dvec4 baseDye = { 0,0,0,1 };
-	glm::dvec4 barrierColor = { 1,1,1,1 };
+	glm::dvec4 baseDye;
+	glm::dvec4 barrierColor;
 
 	// Rendering
 	raylib::Window window;

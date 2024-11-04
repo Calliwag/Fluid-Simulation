@@ -190,6 +190,13 @@ Fluid::Fluid(FluidInfo info, double _vorticity, int _relaxationSteps)
 	dyeSource = info.dyeSource;
 	fluidField = info.fluidField;
 	flowSource = info.flowSource;
+	for (int i = 0; i < sizeX; i++)
+	{
+		for (int j = 0; j < sizeY; j++)
+		{
+			if (dyeSource[i][j] == glm::dvec4{0, 0, 0, 1}) dyeSource[i][j] = baseDye;
+		}
+	}
 
 	density.resize(sizeX, sizeY, baseDensity);
 	dye.resize(sizeX, sizeY, baseDye);
@@ -241,6 +248,9 @@ void Fluid::update()
 
 	// Advect Velocity
 	advectVelocity();
+
+	// Advect density
+	if (compressible) advectDensity();
 
 	//Advect Dye
 	updateFlowAndCurl();
@@ -401,23 +411,10 @@ void Fluid::solveIncompressibilityAt(int x, int y)
 
 void Fluid::solveCompressibility()
 {
-//#pragma omp parallel for num_threads(12)
-	/*for (int x = 2; x < sizeX - 2; x++)
-	{
-		for (int y = 2; y < sizeY - 2; y++)
-		{
-			double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
-				(flowX[x][y] * fluidField[x - 1][y]) +
-				(flowY[x][y + 1] * fluidField[x][y + 1]) -
-				(flowY[x][y] * fluidField[x][y - 1]);
-			double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-			density[x][y] = -divergence / (fluidCount * timeStep);
-		}
-	}*/
 	for (int i = 0; i < relaxationSteps; i++)
 	{
+		//updateFlowSources();
 //#pragma omp parallel for num_threads(12)
-		updateFlowSources();
 		for (int x = 2; x < sizeX - 2; x++)
 		{
 			for (int y = 2; y < sizeY - 2; y++)
@@ -441,7 +438,7 @@ void Fluid::solveCompressibility()
 				}
 			}
 		}
-		updateFlowSources();
+		//updateFlowSources();
 		for (int x = 2; x < sizeX - 2; x++)
 		{
 			for (int y = 2; y < sizeY - 2; y++)
@@ -471,10 +468,18 @@ void Fluid::solveCompressibility()
 void Fluid::solveCompressibilityAt(int x, int y)
 {
 	double ptDensity = density[x][y];
-	double densityGradX = 0.5 * (density[x + 1][y] - density[x - 1][y]);
-	double deltaVelX = -densityGradX / ptDensity;
-	double densityGradY = 0.5 * (density[x + 1][y] - density[x - 1][y]);
-	double deltaVelY = -densityGradX / ptDensity;
+	double densityGradX = 0;
+	//if (fluidField[x + 1][y] == true && fluidField[x - 1][y] == true)
+	//{
+		densityGradX = 0.5 * (density[x + 1][y] - density[x - 1][y]);
+	//}
+	double deltaVelX = -densityGradX;
+	double densityGradY = 0;
+	//if (fluidField[x][y + 1] == true && fluidField[x][y - 1] == true)
+	//{
+		densityGradY = 0.5 * (density[x][y + 1] - density[x][y + 1]);
+	//}
+	double deltaVelY = -densityGradY;
 	flowX[x + 1][y] += deltaVelX;
 	flowX[x][y] += deltaVelX;
 	flowY[x][y + 1] += deltaVelY;
@@ -544,9 +549,9 @@ void Fluid::advectVelocity()
 				double ratio = (1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
-			if (sourceFrac.y > sizeX - 1)
+			if (sourceFrac.y > sizeY - 1)
 			{
-				double ratio = (sizeX - 1 - y) / (sourceFrac.y - y);
+				double ratio = (sizeY - 1 - y) / (sourceFrac.y - y);
 				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
 			}
 			glm::ivec2 source = sourceFrac;
@@ -610,6 +615,56 @@ void Fluid::advectDye()
 		}
 	}
 	dye = newDye;
+}
+
+void Fluid::advectDensity()
+{
+	Grid<double> newDensity = density;
+#pragma omp parallel for num_threads(12)
+	for (int x = 1; x < sizeX - 1; x++)
+	{
+		for (int y = 1; y < sizeY - 1; y++)
+		{
+			if (fluidField[x][y] == 0)
+			{
+				continue;
+			}
+			glm::dvec2 velocity = flowGrid[x][y];
+			glm::dvec2 sourceFrac = glm::dvec2{ x,y } - velocity * timeStep * 0.5;
+			if (sourceFrac.x < 1)
+			{
+				double ratio = (1 - x) / (sourceFrac.x - x);
+				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
+			}
+			if (sourceFrac.x > sizeX - 2)
+			{
+				double ratio = (sizeX - 2 - x) / (sourceFrac.x - x);
+				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
+			}
+			if (sourceFrac.y < 1)
+			{
+				double ratio = (1 - y) / (sourceFrac.y - y);
+				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
+			}
+			if (sourceFrac.y > sizeY - 2)
+			{
+				double ratio = (sizeY - 2 - y) / (sourceFrac.y - y);
+				sourceFrac = ratio * (sourceFrac - glm::dvec2{ x, y }) + glm::dvec2{ x, y };
+			}
+			glm::ivec2 source = glm::ivec2{ floor(sourceFrac.x),floor(sourceFrac.y) };
+			sourceFrac -= source;
+			double sourceDensity;
+			double d1;
+			double d2;
+
+			d1 = glm::mix(density[source.x][source.y], density[source.x][source.y + 1], sourceFrac.y);
+			d2 = glm::mix(density[source.x + 1][source.y], density[source.x + 1][source.y + 1], sourceFrac.y);
+			sourceDensity = glm::mix(d1, d2, sourceFrac.x);
+
+			newDensity[x][y] = sourceDensity;
+		}
+	}
+	density = newDensity;
 }
 
 // Amplifying vortices
