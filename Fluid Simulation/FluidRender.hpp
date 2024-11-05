@@ -19,7 +19,7 @@ private:
 	int renderX;
 	int renderY;
 	int renderScale;
-	int drawMode; // 0 = dye, 1 = pressure, 2 = curl
+	int drawMode; // 0 = dye, 1 = pressure, 2 = curl, 3 = density
 	glm::dvec2 drawMinMax;
 	bool drawLines;
 	int lineSize;

@@ -42,13 +42,17 @@ void FluidRender::getGrids()
 	{
 		dyeGrid = fluid->dye;
 	}
-	if (drawMode == 1)
+	else if (drawMode == 1)
 	{
 		drawGrid = fluid->pressureGrid;
 	}
 	else if (drawMode == 2)
 	{
 		drawGrid = fluid->curlGrid;
+	}
+	else if (drawMode == 3)
+	{
+		drawGrid = fluid->density;
 	}
 }
 
@@ -78,7 +82,7 @@ void FluidRender::draw()
 				cellColor.b = dyeGrid[pX][pY].z * 255;
 				cellColor.a = dyeGrid[pX][pY].w * 255;
 			}
-			else if (drawMode == 1 || drawMode == 2)
+			else if (drawMode == 1 || drawMode == 2 || drawMode == 3)
 			{
 				cellColor.r = glm::mix(0, 255, (glm::clamp(drawGrid[pX][pY], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
 				cellColor.g = 0;

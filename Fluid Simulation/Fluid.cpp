@@ -275,6 +275,10 @@ void Fluid::updateFlowSources()
 				flowX[x + 1][y] = 0.5 * (flowSource[x + 1][y].x + flowSource[x][y].x);
 				flowY[x][y] = 0.5 * (flowSource[x][y - 1].y + flowSource[x][y].y);
 				flowY[x][y + 1] = 0.5 * (flowSource[x][y + 1].y + flowSource[x][y].y);
+				if (compressible)
+				{
+					density[x][y] = baseDensity;
+				}
 			}
 		}
 	}
@@ -413,18 +417,25 @@ void Fluid::solveCompressibility()
 {
 	for (int i = 0; i < relaxationSteps; i++)
 	{
-		//updateFlowSources();
+		updateFlowSources();
 //#pragma omp parallel for num_threads(12)
-		for (int x = 2; x < sizeX - 2; x++)
+		for (int x = 1; x < sizeX - 1; x++)
 		{
-			for (int y = 2; y < sizeY - 2; y++)
+			for (int y = 1; y < sizeY - 1; y++)
 			{
-				double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
-					(flowX[x][y] * fluidField[x - 1][y]) +
-					(flowY[x][y + 1] * fluidField[x][y + 1]) -
-					(flowY[x][y] * fluidField[x][y - 1]);
-				double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-				density[x][y] = -divergence / (fluidCount * timeStep);
+				if (fluidField[x][y] == true)
+				{
+					double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
+						(flowX[x][y] * fluidField[x - 1][y]) +
+						(flowY[x][y + 1] * fluidField[x][y + 1]) -
+						(flowY[x][y] * fluidField[x][y - 1]);
+					double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+					density[x][y] -= timeStep * divergence;
+				}
+				else
+				{
+					density[x][y] = baseDensity;
+				}
 			}
 		}
 #pragma omp parallel for num_threads(12)
@@ -432,23 +443,10 @@ void Fluid::solveCompressibility()
 		{
 			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
 			{
-				if (fluidField[x][y] == 1)
+				if (fluidField[x][y] == true)
 				{
-					solveCompressibilityAt(x, y);
+					//solveCompressibilityAt(x, y);
 				}
-			}
-		}
-		//updateFlowSources();
-		for (int x = 2; x < sizeX - 2; x++)
-		{
-			for (int y = 2; y < sizeY - 2; y++)
-			{
-				double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
-					(flowX[x][y] * fluidField[x - 1][y]) +
-					(flowY[x][y + 1] * fluidField[x][y + 1]) -
-					(flowY[x][y] * fluidField[x][y - 1]);
-				double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-				density[x][y] = -divergence / (fluidCount * timeStep);
 			}
 		}
 #pragma omp parallel for num_threads(12)
@@ -456,9 +454,9 @@ void Fluid::solveCompressibility()
 		{
 			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
 			{
-				if (fluidField[x][y] == 1)
+				if (fluidField[x][y] == true)
 				{
-					solveCompressibilityAt(x, y);
+					//solveCompressibilityAt(x, y);
 				}
 			}
 		}
@@ -468,22 +466,13 @@ void Fluid::solveCompressibility()
 void Fluid::solveCompressibilityAt(int x, int y)
 {
 	double ptDensity = density[x][y];
-	double densityGradX = 0;
-	//if (fluidField[x + 1][y] == true && fluidField[x - 1][y] == true)
-	//{
-		densityGradX = 0.5 * (density[x + 1][y] - density[x - 1][y]);
-	//}
-	double deltaVelX = -densityGradX;
-	double densityGradY = 0;
-	//if (fluidField[x][y + 1] == true && fluidField[x][y - 1] == true)
-	//{
-		densityGradY = 0.5 * (density[x][y + 1] - density[x][y + 1]);
-	//}
-	double deltaVelY = -densityGradY;
-	flowX[x + 1][y] += deltaVelX;
-	flowX[x][y] += deltaVelX;
-	flowY[x][y + 1] += deltaVelY;
-	flowY[x][y] += deltaVelY;
+	double pressure = ptDensity;
+	double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+	double push = 0.001 * timeStep * pressure / fluidCount;
+	flowX[x + 1][y] -= push * fluidField[x + 1][y];
+	flowX[x][y] += push * fluidField[x - 1][y];
+	flowY[x][y + 1] -= push * fluidField[x][y + 1];
+	flowY[x][y] += push * fluidField[x][y - 1];
 }
 
 // Advecting(moving) velocity
@@ -520,6 +509,8 @@ void Fluid::advectVelocity()
 			}
 			glm::ivec2 source = sourceFrac;
 			sourceFrac -= source;
+			if (abs(sourceFrac.x) < timeStep / 100) sourceFrac.x = 0;
+			if (abs(sourceFrac.y) < timeStep / 100) sourceFrac.y = 0;
 			double d1 = glm::mix(flowX[source.x][source.y], flowX[source.x][source.y + 1], sourceFrac.y);
 			double d2 = glm::mix(flowX[source.x + 1][source.y], flowX[source.x + 1][source.y + 1], sourceFrac.y);
 			double sourceFlow = glm::mix(d1, d2, sourceFrac.x);
@@ -556,6 +547,8 @@ void Fluid::advectVelocity()
 			}
 			glm::ivec2 source = sourceFrac;
 			sourceFrac -= source;
+			if (abs(sourceFrac.x) < timeStep / 100) sourceFrac.x = 0;
+			if (abs(sourceFrac.y) < timeStep / 100) sourceFrac.y = 0;
 			double d1 = glm::mix(flowY[source.x][source.y], flowY[source.x][source.y + 1], sourceFrac.y);
 			double d2 = glm::mix(flowY[source.x + 1][source.y], flowY[source.x + 1][source.y + 1], sourceFrac.y);
 			double sourceFlow = glm::mix(d1, d2, sourceFrac.x);

@@ -19,10 +19,10 @@ public:
 
 	// Density/ Compressibility
 	Grid<double> density = {}; // Check this out https://www.clawpack.org/riemann_book/html/Euler.html
-	double baseDensity = 0.5;
+	double baseDensity = 5;
 
 	// Dye Related
-	glm::dvec4 baseDye = {1,1,1,1};
+	glm::dvec4 baseDye = {0,0,0,1};
 	glm::dvec4 barrierColor = {1,1,1,1};
 
 	Grid<glm::dvec4> dye = {};
