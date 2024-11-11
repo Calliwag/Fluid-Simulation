@@ -27,7 +27,7 @@ public:
 
 	Grid<glm::dvec4> dye = {};
 	Grid<glm::dvec4> dyeSource = {};
-	double decayValue = .0005;
+	double decayValue = 0.0;
 	double diffuseValue = 0.0;
 
 	// Temporary Value Storage Grids
@@ -42,7 +42,8 @@ public:
 	double timeStep = 0.1;
 	double vorticity;
 	int relaxationSteps;
-	bool compressible = false;
+	bool compressible = true;
+	double compressibility = 0.9;
 
 	// Threading for drawing
 	bool updateThreadShouldJoin;

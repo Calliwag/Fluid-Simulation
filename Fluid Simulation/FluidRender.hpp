@@ -24,8 +24,8 @@ private:
 	bool drawLines;
 	int lineSize;
 	int maxFrames;
-	int verticalBorder = 3;
-	int horizontalBorder = 3;
+	int verticalBorder = 0;
+	int horizontalBorder = 0;
 
 	Grid<double> drawGrid;
 	Grid<glm::dvec2> flowGrid;

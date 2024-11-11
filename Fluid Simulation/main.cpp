@@ -15,29 +15,29 @@ int main(int argc, char* argv[])
 	program.add_argument("--Vorticity")
 		.help("Set the vorticity of the fluid.")
 		.scan<'g', double>()
-		.default_value(0.20);
+		.default_value(0.0);
 	
 	program.add_argument("--RelaxationSteps")
 		.help("Set the number of relaxation steps for solving incompressibility. 25 recommended.")
 		.scan<'i', int>()
-		.default_value(50);
+		.default_value(25);
 
 	program.add_argument("--DrawMode")
 		.help("What the simulation renders: 0 = Dye, 1 = Pressure, 2 = Vorticity. --DrawMinMax should be used if --DrawMode is set to 1 or 2.")
 		.scan<'i', int>()
-		.default_value(0);
+		.default_value(3);
 
 	program.add_argument("--DrawMinMax")
 		.help("Min and max values for rendering pressure/vorticity. Does nothing if DrawMode is set to 0.")
 		.nargs(2)
 		.scan<'i', int>()
-		.default_value(std::vector<int>{-10, 10});
+		.default_value(std::vector<int>{-5, 15});
 
 	program.add_argument("--DrawLines")
 		.help("Should velocity lines be rendered and at what size (boolean, int).")
 		.nargs(2)
 		.scan<'i', int>()
-		.default_value(std::vector<int>{0,4});
+		.default_value(std::vector<int>{1,4});
 
 	program.add_argument("--MaxFrames")
 		.help("How many frames should be saved as .png files")

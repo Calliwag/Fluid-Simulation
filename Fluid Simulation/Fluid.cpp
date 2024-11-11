@@ -423,14 +423,14 @@ void Fluid::solveCompressibility()
 		{
 			for (int y = 1; y < sizeY - 1; y++)
 			{
-				if (fluidField[x][y] == true)
+				if (fluidField[x][y] == 1)
 				{
 					double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
 						(flowX[x][y] * fluidField[x - 1][y]) +
 						(flowY[x][y + 1] * fluidField[x][y + 1]) -
 						(flowY[x][y] * fluidField[x][y - 1]);
 					double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-					density[x][y] -= timeStep * divergence;
+					density[x][y] -= timeStep * divergence / fluidCount;
 				}
 				else
 				{
@@ -445,7 +445,7 @@ void Fluid::solveCompressibility()
 			{
 				if (fluidField[x][y] == true)
 				{
-					//solveCompressibilityAt(x, y);
+					solveCompressibilityAt(x, y);
 				}
 			}
 		}
@@ -456,7 +456,7 @@ void Fluid::solveCompressibility()
 			{
 				if (fluidField[x][y] == true)
 				{
-					//solveCompressibilityAt(x, y);
+					solveCompressibilityAt(x, y);
 				}
 			}
 		}
@@ -468,11 +468,11 @@ void Fluid::solveCompressibilityAt(int x, int y)
 	double ptDensity = density[x][y];
 	double pressure = ptDensity;
 	double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-	double push = 0.001 * timeStep * pressure / fluidCount;
-	flowX[x + 1][y] -= push * fluidField[x + 1][y];
-	flowX[x][y] += push * fluidField[x - 1][y];
-	flowY[x][y + 1] -= push * fluidField[x][y + 1];
-	flowY[x][y] += push * fluidField[x][y - 1];
+	double push = (1.0 - compressibility) * timeStep * pressure / fluidCount;
+	flowX[x + 1][y] += push * fluidField[x + 1][y];
+	flowX[x][y] -= push * fluidField[x - 1][y];
+	flowY[x][y + 1] += push * fluidField[x][y + 1];
+	flowY[x][y] -= push * fluidField[x][y - 1];
 }
 
 // Advecting(moving) velocity
