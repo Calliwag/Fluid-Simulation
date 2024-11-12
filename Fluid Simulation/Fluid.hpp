@@ -43,7 +43,7 @@ public:
 	double vorticity;
 	int relaxationSteps;
 	bool compressible = true;
-	double compressibility = 0.9;
+	double compressibility = 0.5;
 
 	// Threading for drawing
 	bool updateThreadShouldJoin;

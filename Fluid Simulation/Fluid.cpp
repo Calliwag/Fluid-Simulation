@@ -423,14 +423,14 @@ void Fluid::solveCompressibility()
 		{
 			for (int y = 1; y < sizeY - 1; y++)
 			{
-				if (fluidField[x][y] == 1)
+				if (fluidField[x][y] == 1 && flowSource[x][y] == glm::dvec2{ 0, 0 })
 				{
 					double divergence = (flowX[x + 1][y] * fluidField[x + 1][y]) -
 						(flowX[x][y] * fluidField[x - 1][y]) +
 						(flowY[x][y + 1] * fluidField[x][y + 1]) -
 						(flowY[x][y] * fluidField[x][y - 1]);
 					double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-					density[x][y] -= timeStep * divergence / fluidCount;
+					density[x][y] -= 2 * timeStep * divergence / fluidCount;
 				}
 				else
 				{
@@ -443,7 +443,7 @@ void Fluid::solveCompressibility()
 		{
 			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
 			{
-				if (fluidField[x][y] == true)
+				if (fluidField[x][y] == 1 && flowSource[x][y] == glm::dvec2{ 0, 0 })
 				{
 					solveCompressibilityAt(x, y);
 				}
@@ -454,7 +454,7 @@ void Fluid::solveCompressibility()
 		{
 			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
 			{
-				if (fluidField[x][y] == true)
+				if (fluidField[x][y] == 1 && flowSource[x][y] == glm::dvec2{ 0, 0 })
 				{
 					solveCompressibilityAt(x, y);
 				}
@@ -466,8 +466,13 @@ void Fluid::solveCompressibility()
 void Fluid::solveCompressibilityAt(int x, int y)
 {
 	double ptDensity = density[x][y];
-	double pressure = ptDensity;
 	double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
+	double avgDensity = density[x - 1][y] * fluidField[x - 1][y] +
+		density[x + 1][y] * fluidField[x + 1][y] +
+		density[x][y - 1] * fluidField[x][y - 1] +
+		density[x][y + 1] * fluidField[x][y + 1];
+	avgDensity = avgDensity / fluidCount;
+	double pressure = ptDensity/* + avgDensity*/;
 	double push = (1.0 - compressibility) * timeStep * pressure / fluidCount;
 	flowX[x + 1][y] += push * fluidField[x + 1][y];
 	flowX[x][y] -= push * fluidField[x - 1][y];
