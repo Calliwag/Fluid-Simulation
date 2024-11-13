@@ -18,6 +18,7 @@ private:
 	Grid<uint8_t> fluidField = {};
 	Grid<glm::dvec4> dyeSource = {};
 	Grid<glm::dvec2> flowSource = {};
+	Grid<double> densitySource = {};
 
 	glm::dvec4 baseDye = { 0,0,0,1 };
 	glm::dvec4 barrierColor = { 1,1,1,1 };
@@ -29,6 +30,7 @@ private:
 	bool rectMode = 0;
 	glm::dvec2 drawVel;
 	glm::dvec4 drawColor;
+	double drawDensity;
 	bool drawingRect = 0;
 	glm::dvec2 rectBase;
 	MouseButton rectButton; // 1 = left, 2 = right
@@ -77,6 +79,7 @@ public:
 	Grid<uint8_t> fluidField;
 	Grid<glm::dvec4> dyeSource;
 	Grid<glm::dvec2> flowSource;
+	Grid<double> densitySource;
 
 	// Colors
 	glm::dvec4 baseDye;

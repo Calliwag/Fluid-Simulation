@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 		.help("Min and max values for rendering pressure/vorticity. Does nothing if DrawMode is set to 0.")
 		.nargs(2)
 		.scan<'i', int>()
-		.default_value(std::vector<int>{-5, 15});
+		.default_value(std::vector<int>{-10, 10});
 
 	program.add_argument("--DrawLines")
 		.help("Should velocity lines be rendered and at what size (boolean, int).")

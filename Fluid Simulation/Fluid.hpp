@@ -16,10 +16,11 @@ public:
 	Grid<double> flowY = {};
 	Grid <glm::dvec2> flowSource = {};
 	Grid<uint8_t> fluidField = {};
+	Grid<double> densitySource = {};
 
 	// Density/ Compressibility
 	Grid<double> density = {}; // Check this out https://www.clawpack.org/riemann_book/html/Euler.html
-	double baseDensity = 5;
+	double baseDensity = 0;
 
 	// Dye Related
 	glm::dvec4 baseDye = {0,0,0,1};
@@ -43,7 +44,7 @@ public:
 	double vorticity;
 	int relaxationSteps;
 	bool compressible = true;
-	double compressibility = 0.5;
+	double compressibility = 0.9;
 
 	// Threading for drawing
 	bool updateThreadShouldJoin;
@@ -62,6 +63,7 @@ public:
 
 	// Update sources
 	void updateFlowSources();
+	void updateDensitySources();
 	void updateDyeSources();
 
 	// Update flow and curl

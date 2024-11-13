@@ -190,6 +190,7 @@ Fluid::Fluid(FluidInfo info, double _vorticity, int _relaxationSteps)
 	dyeSource = info.dyeSource;
 	fluidField = info.fluidField;
 	flowSource = info.flowSource;
+	densitySource = info.densitySource;
 	for (int i = 0; i < sizeX; i++)
 	{
 		for (int j = 0; j < sizeY; j++)
@@ -279,6 +280,20 @@ void Fluid::updateFlowSources()
 				{
 					density[x][y] = baseDensity;
 				}
+			}
+		}
+	}
+}
+
+void Fluid::updateDensitySources()
+{
+	for (int x = 0; x < sizeX; x++)
+	{
+		for (int y = 0; y < sizeY; y++)
+		{
+			if (densitySource[x][y] != baseDensity)
+			{
+				density[x][y] = densitySource[x][y];
 			}
 		}
 	}
@@ -418,6 +433,7 @@ void Fluid::solveCompressibility()
 	for (int i = 0; i < relaxationSteps; i++)
 	{
 		updateFlowSources();
+		updateDensitySources();
 //#pragma omp parallel for num_threads(12)
 		for (int x = 1; x < sizeX - 1; x++)
 		{
@@ -472,7 +488,7 @@ void Fluid::solveCompressibilityAt(int x, int y)
 		density[x][y - 1] * fluidField[x][y - 1] +
 		density[x][y + 1] * fluidField[x][y + 1];
 	avgDensity = avgDensity / fluidCount;
-	double pressure = ptDensity/* + avgDensity*/;
+	double pressure = ptDensity - avgDensity;
 	double push = (1.0 - compressibility) * timeStep * pressure / fluidCount;
 	flowX[x + 1][y] += push * fluidField[x + 1][y];
 	flowX[x][y] -= push * fluidField[x - 1][y];

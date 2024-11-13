@@ -18,6 +18,7 @@ FluidCreate::FluidCreate(int _sizeX, int _sizeY, int _renderScale)
 	dyeSource.resize(sizeX, sizeY, baseDye);
 	fluidField.resize(sizeX, sizeY, 0);
 	flowSource.resize(sizeX, sizeX, glm::dvec2{ 0,0 });
+	densitySource.resize(sizeX, sizeY, 0);
 
 	// Make all center cells into fluid
 	for (int x = 1; x < sizeX - 1; x++)
@@ -50,6 +51,7 @@ void FluidCreate::loadInfo(FluidInfo info)
 	flowSource = info.flowSource;
 	baseDye = info.baseDye;
 	barrierColor = info.barrierColor;
+	densitySource = info.densitySource;
 
 	int renderX = sizeX * renderScale;
 	int renderY = sizeY * renderScale;
@@ -185,7 +187,15 @@ void FluidCreate::draw()
 				cellColor.b = dyeSource[x][y].z * 255;
 				cellColor.a = dyeSource[x][y].w * 255;
 			}
-			else if (flowSource[x][y] != glm::dvec2{ 0,0 } && drawType != 3)
+			else if (drawType == 4)
+			{
+				glm::dvec2 drawMinMax = { -10,10 };
+				cellColor.r = glm::mix(0, 255, (glm::clamp(densitySource[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.g = 0;
+				cellColor.b = glm::mix(255, 0, (glm::clamp(densitySource[x][y], drawMinMax.x, drawMinMax.y) - drawMinMax.x) / (drawMinMax.y - drawMinMax.x));
+				cellColor.a = 255;
+			}
+			else if (flowSource[x][y] != glm::dvec2{ 0,0 } && drawType != 3 && drawType != 4)
 			{
 				cellColor = GREEN;
 				cellColor.a = 128;
@@ -226,6 +236,7 @@ void FluidCreate::draw()
 	if (drawType == 1) textToDraw = "Draw Mode: Obstacle";
 	if (drawType == 2) textToDraw = "Draw Mode: Flow Source\nSource Velocity: " + glm::to_string(drawVel);
 	if (drawType == 3) textToDraw = "Draw Mode: Dye Source\nSource Color(rgba): " + glm::to_string(drawColor);
+	if (drawType == 4) textToDraw = "Draw Mode: DensitySource\nSource Density: " + std::to_string(drawDensity);
 
 	DrawText(textToDraw.c_str(), renderScale * 2, renderScale * 2 + buttonHeight, 12, GREEN);
 }
@@ -298,6 +309,17 @@ void FluidCreate::input()
 								dyeSource[ix][iy] = baseDye;
 							}
 						}
+						else if (drawType == 4)
+						{
+							if (rectButton == MOUSE_BUTTON_LEFT)
+							{
+								if (fluidField[ix][iy]) densitySource[ix][iy] = drawDensity;
+							}
+							else if (rectButton == MOUSE_BUTTON_RIGHT)
+							{
+								densitySource[ix][iy] = 0;
+							}
+						}
 					}
 				}
 			}
@@ -337,6 +359,17 @@ void FluidCreate::input()
 					dyeSource[x][y] = baseDye;
 				}
 			}
+			else if (drawType == 4)
+			{
+				if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+				{
+					if (fluidField[x][y]) densitySource[x][y] = drawDensity;
+				}
+				else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT))
+				{
+					densitySource[x][y] = 0;
+				}
+			}
 		}
 	}
 
@@ -355,6 +388,12 @@ void FluidCreate::input()
 		if (IsKeyPressed(KEY_B)) drawColor.b = 1 - drawColor.b;
 		if (IsKeyPressed(KEY_A)) drawColor.a = 1 - drawColor.a;
 	}
+	else if (drawType == 4)
+	{
+		if (IsKeyPressed(KEY_BACKSPACE)) drawDensity = 0;
+		else if (IsKeyPressed(KEY_UP)) drawDensity += 1;
+		else if (IsKeyPressed(KEY_DOWN)) drawDensity -= 1;
+	}
 
 	if (GuiButton(Rectangle{ 0, 0, buttonWidth, buttonHeight }, "#131#Run")) exitWindow = 1;
 	if (GuiButton(Rectangle{ buttonWidth, 0, buttonWidth, buttonHeight }, "#8#New")) newing = 1;
@@ -367,9 +406,11 @@ void FluidCreate::input()
 	if (GuiButton(Rectangle{ buttonWidth * 5, 0, buttonWidth, buttonHeight }, "#62#Flow Source")) drawType = 2;
 	if (IsKeyPressed(KEY_THREE)) drawType = 3;
 	if (GuiButton(Rectangle{ buttonWidth * 6, 0, buttonWidth, buttonHeight }, "#26#Dye Source")) drawType = 3;
+	if (IsKeyPressed(KEY_FOUR)) drawType = 4;
+	if (GuiButton(Rectangle{ buttonWidth * 7, 0, buttonWidth, buttonHeight }, "#26#Density Source")) drawType = 4;
 
 	if (IsKeyPressed(KEY_SPACE)) rectMode = !rectMode;
-	if (GuiButton(Rectangle{ buttonWidth * 7, 0, buttonWidth, buttonHeight }, "#109#Rectangle Mode")) rectMode = !rectMode;
+	if (GuiButton(Rectangle{ buttonWidth * 8, 0, buttonWidth, buttonHeight }, "#109#Rectangle Mode")) rectMode = !rectMode;
 }
 
 glm::dvec2 FluidCreate::mouseToGrid(Vector2 mousePos)
@@ -389,6 +430,7 @@ FluidInfo::FluidInfo(FluidCreate data)
 	flowSource = data.flowSource;
 	baseDye = data.baseDye;
 	barrierColor = data.barrierColor;
+	densitySource = data.densitySource;
 }
 
 FluidInfo::FluidInfo(int _sizeX, int _sizeY, int _renderScale)
@@ -401,7 +443,8 @@ FluidInfo::FluidInfo(int _sizeX, int _sizeY, int _renderScale)
 	renderScale = _renderScale;
 
 	dyeSource.resize(sizeX, sizeY, baseDye);
-	fluidField.resize(sizeX, sizeY);
+	fluidField.resize(sizeX, sizeY, 0);
+	densitySource.resize(sizeX, sizeY, 0);
 
 	// Set only non-boundary cells to be fluid
 	for (int x = 1; x < sizeX - 1; x++)
@@ -418,36 +461,90 @@ FluidInfo::FluidInfo(int _sizeX, int _sizeY, int _renderScale)
 FluidInfo::FluidInfo(std::string fileName)
 {
 	std::ifstream fin(fileName);
-	// Read size and render scale
-	fin >> sizeX >> sizeY >> renderScale;
 
-	// Read base dye
-	fin >> baseDye.x >> baseDye.y >> baseDye.z >> baseDye.w;
-
-	// Read barrier color
-	fin >> barrierColor.x >> barrierColor.y >> barrierColor.z >> barrierColor.w;
-
-	// Size grids
-	fluidField.resize(sizeX, sizeY);
-	dyeSource.resize(sizeX, sizeY);
-	flowSource.resize(sizeX, sizeY);
-
-	for (int x = 0; x < sizeX; x++)
+	std::string first;
+	fin >> first;
+	if (first != "version")
 	{
-		for (int y = 0; y < sizeY; y++)
+		fin.clear();
+		fin.seekg(0, std::ios::beg);
+
+		// Read size and render scale
+		fin >> sizeX >> sizeY >> renderScale;
+
+		// Read base dye
+		fin >> baseDye.x >> baseDye.y >> baseDye.z >> baseDye.w;
+
+		// Read barrier color
+		fin >> barrierColor.x >> barrierColor.y >> barrierColor.z >> barrierColor.w;
+
+		// Size grids
+		fluidField.resize(sizeX, sizeY);
+		dyeSource.resize(sizeX, sizeY);
+		flowSource.resize(sizeX, sizeY);
+		densitySource.resize(sizeX, sizeY);
+
+		for (int x = 0; x < sizeX; x++)
 		{
-			// Read fluid field
-			fin >> fluidField[x][y];
+			for (int y = 0; y < sizeY; y++)
+			{
+				// Read fluid field
+				fin >> fluidField[x][y];
 
-			// Read dye source
-			fin >> dyeSource[x][y].x;
-			fin >> dyeSource[x][y].y;
-			fin >> dyeSource[x][y].z;
-			fin >> dyeSource[x][y].w;
+				// Read dye source
+				fin >> dyeSource[x][y].x;
+				fin >> dyeSource[x][y].y;
+				fin >> dyeSource[x][y].z;
+				fin >> dyeSource[x][y].w;
 
-			// Read flow source
-			fin >> flowSource[x][y].x;
-			fin >> flowSource[x][y].y;
+				// Read flow source
+				fin >> flowSource[x][y].x;
+				fin >> flowSource[x][y].y;
+			}
+		}
+	}
+	else
+	{
+		int version;
+		fin >> version;
+		if (version == 1)
+		{
+			// Read size and render scale
+			fin >> sizeX >> sizeY >> renderScale;
+
+			// Read base dye
+			fin >> baseDye.x >> baseDye.y >> baseDye.z >> baseDye.w;
+
+			// Read barrier color
+			fin >> barrierColor.x >> barrierColor.y >> barrierColor.z >> barrierColor.w;
+
+			// Size grids
+			fluidField.resize(sizeX, sizeY);
+			dyeSource.resize(sizeX, sizeY);
+			flowSource.resize(sizeX, sizeY);
+			densitySource.resize(sizeX, sizeY);
+
+			for (int x = 0; x < sizeX; x++)
+			{
+				for (int y = 0; y < sizeY; y++)
+				{
+					// Read fluid field
+					fin >> fluidField[x][y];
+
+					// Read dye source
+					fin >> dyeSource[x][y].x;
+					fin >> dyeSource[x][y].y;
+					fin >> dyeSource[x][y].z;
+					fin >> dyeSource[x][y].w;
+
+					// Read flow source
+					fin >> flowSource[x][y].x;
+					fin >> flowSource[x][y].y;
+
+					// Read density source
+					fin >> densitySource[x][y];
+				}
+			}
 		}
 	}
 }
@@ -455,6 +552,7 @@ FluidInfo::FluidInfo(std::string fileName)
 void FluidInfo::saveTo(std::string fileName)
 {
 	std::ofstream fout(fileName);
+	fout << "version " << 1 << " ";
 	fout << sizeX << " " << sizeY << " "; // Write size, uint16_t
 	fout << renderScale << " "; // Write render scale, uint16_t
 	fout << baseDye.x << " " << baseDye.y << " " << baseDye.z << " " << baseDye.w << " "; // Write base dye
@@ -475,6 +573,9 @@ void FluidInfo::saveTo(std::string fileName)
 			// Write flow source
 			fout << flowSource[x][y].x << " ";
 			fout << flowSource[x][y].y << " ";
+
+			// Write density source
+			fout << densitySource[x][y] << " ";
 		}
 	}
 	fout.close();
