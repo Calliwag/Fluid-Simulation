@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	program.add_argument("--DrawMode")
 		.help("What the simulation renders: 0 = Dye, 1 = Pressure, 2 = Vorticity. --DrawMinMax should be used if --DrawMode is set to 1 or 2.")
 		.scan<'i', int>()
-		.default_value(3);
+		.default_value(1);
 
 	program.add_argument("--DrawMinMax")
 		.help("Min and max values for rendering pressure/vorticity. Does nothing if DrawMode is set to 0.")

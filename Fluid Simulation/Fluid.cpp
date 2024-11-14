@@ -446,7 +446,8 @@ void Fluid::solveCompressibility()
 						(flowY[x][y + 1] * fluidField[x][y + 1]) -
 						(flowY[x][y] * fluidField[x][y - 1]);
 					double fluidCount = fluidField[x + 1][y] + fluidField[x - 1][y] + fluidField[x][y + 1] + fluidField[x][y - 1];
-					density[x][y] -= 2 * timeStep * divergence / fluidCount;
+					density[x][y] -= timeStep * divergence;
+					pressureGrid[x][y] = density[x][y];
 				}
 				else
 				{
@@ -488,7 +489,7 @@ void Fluid::solveCompressibilityAt(int x, int y)
 		density[x][y - 1] * fluidField[x][y - 1] +
 		density[x][y + 1] * fluidField[x][y + 1];
 	avgDensity = avgDensity / fluidCount;
-	double pressure = ptDensity - avgDensity;
+	double pressure = ptDensity/* - avgDensity*/;
 	double push = (1.0 - compressibility) * timeStep * pressure / fluidCount;
 	flowX[x + 1][y] += push * fluidField[x + 1][y];
 	flowX[x][y] -= push * fluidField[x - 1][y];
