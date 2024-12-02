@@ -141,6 +141,7 @@
     <ClInclude Include="Fluid.hpp" />
     <ClInclude Include="FluidCreate.hpp" />
     <ClInclude Include="FluidRender.hpp" />
+    <ClInclude Include="Threading.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
