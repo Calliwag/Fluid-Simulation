@@ -211,6 +211,8 @@ Fluid::Fluid(FluidInfo info, double _vorticity, int _relaxationSteps)
 	relaxationSteps = _relaxationSteps;
 
 	frame = 0;
+
+	mark = new Tasker(this, 6, 250);
 }
 
 void Fluid::updateLoop()
@@ -386,29 +388,30 @@ void Fluid::solveIncompressibility()
 	for (int i = 0; i < relaxationSteps; i++)
 	{
 		updateFlowSources();
-#pragma omp parallel for num_threads(12)
-		for (int x = 1; x < sizeX - 1; x++)
-		{
-			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
-			{
-				if (fluidField[x][y] == 1)
-				{
-					solveIncompressibilityAt(x, y);
-				}
-			}
-		}
-		updateFlowSources();
-#pragma omp parallel for num_threads(12)
-		for (int x = 1; x < sizeX - 1; x++)
-		{
-			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
-			{
-				if (fluidField[x][y] == 1)
-				{
-					solveIncompressibilityAt(x, y);
-				}
-			}
-		}
+		mark->Solve();
+//#pragma omp parallel for num_threads(12)
+//		for (int x = 1; x < sizeX - 1; x++)
+//		{
+//			for (int y = x % 2 + 1; y < sizeY - 1; y += 2)
+//			{
+//				if (fluidField[x][y] == 1)
+//				{
+//					solveIncompressibilityAt(x, y);
+//				}
+//			}
+//		}
+//		updateFlowSources();
+//#pragma omp parallel for num_threads(12)
+//		for (int x = 1; x < sizeX - 1; x++)
+//		{
+//			for (int y = 2 - (x % 2); y < sizeY - 1; y += 2)
+//			{
+//				if (fluidField[x][y] == 1)
+//				{
+//					solveIncompressibilityAt(x, y);
+//				}
+//			}
+//		}
 	}
 }
 

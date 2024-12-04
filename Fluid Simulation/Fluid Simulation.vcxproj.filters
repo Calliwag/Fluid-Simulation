@@ -38,7 +38,7 @@
     <ClInclude Include="Fluid.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Threading.hpp">
+    <ClInclude Include="ThreadQ.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
